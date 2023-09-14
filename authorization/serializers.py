@@ -3,11 +3,11 @@ from users import models
 from django.contrib.auth.hashers import make_password
 
 
-class RegisterSerializer(serializers.ModelSerializer):
-    confirm_password = serializers.CharField()
-    class Meta:
-        model = models.Users
-        fields = ["username", "email", "password", "confirm_password"]
+class RegisterSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=32)
+    email = serializers.EmailField()
+    password = serializers.CharField(max_length=32, write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
 
     def validate(self, attr):
         if len(attr['password']) < 8:
@@ -17,20 +17,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attr
     
     def create(self, validated_data):
-        return models.Users.objects.create(
-            username=validated_data['username'], 
-            email=validated_data['email'],
-            password=make_password(validated_data['password']))
+        confirm_password = validated_data.pop("confirm_password")
+        validated_data['password'] = make_password(validated_data['password'])
+        user = models.Users.objects.create(**validated_data)
+        return user
     
 
-class LoginSerializer(serializers.ModelSerializer):
-    username2 = serializers.CharField()
-    password2 = serializers.CharField()
-    class Meta:
-        model = models.Users
-        fields = ["username", "password"]
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=32)
+    password = serializers.CharField(max_length=32)
 
-    def validate(self, attr):
-        if attr['username2'] == attr['username'] and attr['password2'] == attr['password']:
-            return attr
+
+class ChangePasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=32)
+    new_password = serializers.CharField(max_length=32)
+    confirm_new_password = serializers.CharField(max_length=32)
   

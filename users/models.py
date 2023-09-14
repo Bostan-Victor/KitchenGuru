@@ -1,11 +1,13 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 
-class Users(models.Model):
-    username = models.CharField(max_length=32, unique=True)
-    email = models.EmailField(unique=True)
-    password = models.CharField(max_length=255)
+class Users(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
+    first_name = None
+    last_name = None
+    user_permissions = None
+    groups = None
 
 
 class Profiles(models.Model):
