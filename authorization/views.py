@@ -15,9 +15,12 @@ class RegisterView(generics.CreateAPIView):
 def login_view(request):
     data = request.data
     try:
-        user = models.Users.objects.get(username=data['username'])
+        user = models.Users.objects.get(username=data['username_email'])
     except models.Users.DoesNotExist:
-        return Response({"message": "Username invalid!"}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            user = models.Users.objects.get(email=data['username_email'])
+        except:
+            return Response({"message": "Username or Email invalid!"}, status=status.HTTP_404_NOT_FOUND)
     if check_password(data['password'], user.password):
         if user.is_superuser:
             return Response({"message": "Admin logged in"}, status=status.HTTP_200_OK)
