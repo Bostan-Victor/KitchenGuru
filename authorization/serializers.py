@@ -1,6 +1,8 @@
-from rest_framework import serializers
+from rest_framework import serializers, status
 from users import models
 from django.contrib.auth.hashers import make_password
+from django.db import IntegrityError
+from rest_framework.response import Response
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -19,7 +21,11 @@ class RegisterSerializer(serializers.Serializer):
     def create(self, validated_data):
         confirm_password = validated_data.pop("confirm_password")
         validated_data['password'] = make_password(validated_data['password'])
-        user = models.Users.objects.create(**validated_data)
+        try:
+            user = models.Users.objects.create(**validated_data)
+        except IntegrityError:
+            raise serializers.ValidationError({"message": "Username or email already exists."})
+                # return Response({"message": "An error occured"}, status=status.HTTP_401_UNAUTHORIZED)
         return user
     
 
