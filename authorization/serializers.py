@@ -38,4 +38,10 @@ class ChangePasswordSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=32)
     new_password = serializers.CharField(max_length=32)
     confirm_new_password = serializers.CharField(max_length=32)
+
+    def put(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        return self.update(request, *args, **kwargs)
   
