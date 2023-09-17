@@ -17,4 +17,4 @@ class Profiles(models.Model):
     avatar = models.ImageField(upload_to="static/avatars", default="static/avatars/no_picture.png")
     last_login = models.DateTimeField()
     updated = models.DateTimeField()
-      
+    
