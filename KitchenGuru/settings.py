@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "authorization.apps.AuthorizationConfig",
     "rest_framework.authtoken",
     "gallery",
+    "superuser.apps.SuperuserConfig",
 ]
 
 MIDDLEWARE = [
