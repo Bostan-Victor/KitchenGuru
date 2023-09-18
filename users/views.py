@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from rest_framework.decorators import api_view
+from users import models
 
 from authorization import serializers
 from rest_framework import generics
@@ -13,4 +14,6 @@ class ProfileView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     
     def get_object(self):
-        return self.request.user
+        data = self.request.data
+        user = models.Users.objects.get(username = data['username'])
+        return user

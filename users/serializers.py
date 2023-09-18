@@ -8,4 +8,7 @@ class ProfileSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(max_length = 32)
     avatar = serializers.ImageField(default="static/avatars/no_picture.png")
-    
+
+
+class AddAvatarSerializer(serializers.Serializer):
+    avatar = serializers.ImageField(default="static/avatars/no_picture.png")

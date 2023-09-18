@@ -18,3 +18,6 @@ class Profiles(models.Model):
     last_login = models.DateTimeField()
     updated = models.DateTimeField()
     
+# class Avatar(models.model):
+#     title = models.CharField(max_length=32)
+#     avatar = models.ImageField(upload_to='static/avatar')
