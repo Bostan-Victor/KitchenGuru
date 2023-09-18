@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 
 class Users(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
+    # email = models.EmailField(unique=True)
     first_name = None
     last_name = None
     user_permissions = None
@@ -17,4 +18,4 @@ class Profiles(models.Model):
     avatar = models.ImageField(upload_to="static/avatars", default="static/avatars/no_picture.png")
     last_login = models.DateTimeField()
     updated = models.DateTimeField()
-    
+
