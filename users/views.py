@@ -5,15 +5,12 @@ from users import models
 from authorization import serializers
 from rest_framework import generics
 from users import serializers
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import permissions
 
 # Create your views here.
 
-class ProfileView(generics.RetrieveAPIView):
+class ProfileView(generics.ListAPIView):
+    queryset = models.Profiles.objects.all()
     serializer_class = serializers.ProfileSerializer
-    permission_classes = [IsAuthenticated]
-    
-    def get_object(self):
-        data = self.request.data
-        user = models.Users.objects.get(username = data['username'])
-        return user
+    permission_classes = [permissions.IsAuthenticated]
+

@@ -11,12 +11,16 @@ class Users(AbstractUser):
 
 
 class Profiles(models.Model):
-    user = models.ForeignKey(Users, on_delete=models.CASCADE)
-    first_name = models.CharField(max_length=32)
-    last_name = models.CharField(max_length=32)
+    user = models.OneToOneField(
+        Users,
+        on_delete=models.CASCADE,
+        primary_key=True
+    )
+    first_name = models.CharField(max_length=32, null=True)
+    last_name = models.CharField(max_length=32, null=True)
     avatar = models.ImageField(upload_to="static/avatars", default="static/avatars/no_picture.png")
-    last_login = models.DateTimeField()
-    updated = models.DateTimeField()
+    last_login = models.DateTimeField(null=True)
+    updated = models.DateTimeField(null=True)
     
 # class Avatar(models.model):
 #     title = models.CharField(max_length=32)
