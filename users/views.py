@@ -29,3 +29,4 @@ class ProfileView(generics.ListAPIView):
                 queryset = models.Users.objects.get(id=user.id)
                 serializer = self.get_serializer(queryset, many=False)
                 return Response(serializer.data, status=status.HTTP_200_OK)
+            
