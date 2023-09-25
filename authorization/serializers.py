@@ -1,7 +1,6 @@
 from rest_framework import serializers, status
 from users import models
 from django.contrib.auth.hashers import make_password
-from django.db import IntegrityError
 from rest_framework.response import Response
 
 
@@ -47,4 +46,3 @@ class ChangePasswordSerializer(serializers.Serializer):
         serializer.is_valid(raise_exception=True)
         
         return self.update(request, *args, **kwargs)
-  

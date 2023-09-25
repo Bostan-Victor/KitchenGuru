@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     "authorization.apps.AuthorizationConfig",
     "rest_framework.authtoken",
     "superuser.apps.SuperuserConfig",
-    "recipes.apps.RecipesConfig"
+    "recipes.apps.RecipesConfig",
+    "filtering_test.apps.FilteringTestConfig"
 ]
 
 MIDDLEWARE = [
