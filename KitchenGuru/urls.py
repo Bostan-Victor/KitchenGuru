@@ -21,6 +21,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", include([
         path("auth/", include("authorization.urls")),
-        path("users/", include("users.urls"))
+        path("users/", include("users.urls")),
+        path("admin/", include("superuser.urls")),
+        path("best100/", include("filtering_test.urls"))
     ]))
 ]

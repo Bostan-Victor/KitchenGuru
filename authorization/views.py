@@ -6,6 +6,7 @@ from django.contrib.auth.hashers import check_password
 from users import models
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import datetime
 
 
 class RegisterView(generics.CreateAPIView):
@@ -22,6 +23,12 @@ def login_view(request):
             user = models.Users.objects.get(email=data['username_email'])
         except:
             return Response({"message": "Username or Email invalid!"}, status=status.HTTP_404_NOT_FOUND)
+    try:
+        profile = models.Profiles.objects.get(user_id=user.id)
+        profile.last_login = datetime.now()
+        profile.save()
+    except:
+        return Response({"message": "Profile does not exist!"}, status=status.HTTP_404_NOT_FOUND)
     if check_password(data['password'], user.password):
         refresh = RefreshToken.for_user(user)
         access_token =  str(refresh.access_token)
@@ -39,13 +46,10 @@ def login_view(request):
 class ChangePasswordView(generics.UpdateAPIView):
     serializer_class = serializers.ChangePasswordSerializer
     permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        return self.request.user
     
     def update(self, request, *args, **kwargs):
         data = request.data
-        user = self.get_object()
+        user = request.user
 
         if check_password(data['password'], user.password):
             if len(data['new_password']) < 8:
@@ -55,7 +59,9 @@ class ChangePasswordView(generics.UpdateAPIView):
             new_password = data['new_password']
             user.set_password(new_password)
             user.save()
-
+            profile = models.Profiles.objects.get(user_id=user.id)
+            profile.updated = datetime.now()
+            profile.save()
             return Response({"message": "Password updated succesfully!"}, status=status.HTTP_200_OK)
         else:
             return Response({"message": "Old password is incorrect!"}, status=status.HTTP_400_BAD_REQUEST)
