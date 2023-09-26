@@ -22,3 +22,12 @@ class Profiles(models.Model):
     last_login = models.DateTimeField(null=True)
     updated = models.DateTimeField(null=True)
 
+
+class PasswordResetCode(models.Model):
+    user = models.OneToOneField(
+        Users,
+        on_delete=models.CASCADE,
+        primary_key=True
+    )
+    code = models.CharField(max_length=6, null=True)
+    created_at = models.DateTimeField(null=True)

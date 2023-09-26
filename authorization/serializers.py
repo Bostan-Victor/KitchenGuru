@@ -28,6 +28,7 @@ class RegisterSerializer(serializers.Serializer):
         validated_data['password'] = make_password(validated_data['password'])
         user = models.Users.objects.create(**validated_data)
         profile = models.Profiles.objects.create(user=user)
+        rec_code = models.PasswordResetCode.objects.create(user=user)
         return user
     
 
@@ -38,6 +39,26 @@ class LoginSerializer(serializers.Serializer):
 
 class ChangePasswordSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=32)
+    new_password = serializers.CharField(max_length=32)
+    confirm_new_password = serializers.CharField(max_length=32)
+
+    def put(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        return self.update(request, *args, **kwargs)
+    
+
+class PasswordRecoveryRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    
+
+class PasswordRevoveryConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6)
+
+
+class PasswordRecoveryChange(serializers.Serializer):
     new_password = serializers.CharField(max_length=32)
     confirm_new_password = serializers.CharField(max_length=32)
 
