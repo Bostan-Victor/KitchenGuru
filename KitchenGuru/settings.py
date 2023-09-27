@@ -141,3 +141,10 @@ SIMPLE_JWT = {
 }
 
 AUTH_USER_MODEL = "users.Users"
+
+# Mailtrap configuration
+
+EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
+EMAIL_HOST_USER = '842f18f8b476ee'
+EMAIL_HOST_PASSWORD = '658c5c1542a585'
+EMAIL_PORT = '2525'
