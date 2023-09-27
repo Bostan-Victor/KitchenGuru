@@ -5,7 +5,11 @@ class Recipes(models.Model):
     title = models.CharField(max_length=255, null=False)
     ingredients = models.TextField(null=False)
     instructions = models.TextField(null=False)
-    image_name = models.ImageField(upload_to="static/recipes", default="static/recipes/no_recipe.jpg")
+    image = models.ImageField(upload_to="KitchenGuru/static/recipes", default="static/recipes/no_recipe.jpg")
+
+class RecipesImages(models.Model):
+    recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to="KitchenGuru/static/recipes", null=True)
 
 
 class Review(models.Model):

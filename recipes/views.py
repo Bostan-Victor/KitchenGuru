@@ -13,7 +13,6 @@ class CreateRecipeView(generics.CreateAPIView):
 
 
 class CreateReviewView(generics.CreateAPIView):
-    # queryset = models.Review.objects.all()
     serializer_class = serializers.RecipeReviewSerializer
     permission_classes = [IsAuthenticated]
         

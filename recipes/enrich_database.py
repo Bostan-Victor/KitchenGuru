@@ -15,7 +15,7 @@ data = []
 
 i = 50
 for col in f:
-    dict = {
+    dt = {
         'model': 'recipes.Recipes',
         'fields': {}
     }
@@ -30,8 +30,8 @@ for col in f:
     data_temp['instructions'] = col['Instructions']
     data_temp['image_name'] = path_start + col['Image_Name'] + ".jpg"
     shutil.copy2(images_path_from + col['Image_Name'] + '.jpg', images_path_to + col['Image_Name'] + '.jpg')
-    dict['fields'] = data_temp
-    data.append(dict)
+    dt['fields'] = data_temp
+    data.append(dt)
     i -= 1
     if not i:
         break
