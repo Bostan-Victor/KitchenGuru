@@ -4,5 +4,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path("profile", views.ProfileView.as_view())
+    path("profile", views.ProfileView.as_view()),
+    # path("change_avatar", views.ChangeAvatar.as_view())
 ]
