@@ -10,3 +10,8 @@ class CreateRecipeSerializer(serializers.Serializer):
     def create(self, validated_data):
         recipe = models.Recipes.objects.create(**validated_data)
         return recipe
+
+
+class RecipeReviewSerializer(serializers.Serializer):
+    text = serializers.CharField(max_length=255)
+    rating = serializers.IntegerField()
