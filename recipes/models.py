@@ -1,15 +1,16 @@
 from django.db import models
 from users.models import Users
 
+
 class Recipes(models.Model):
     title = models.CharField(max_length=255, null=False)
     ingredients = models.TextField(null=False)
     instructions = models.TextField(null=False)
-    image = models.ImageField(upload_to="KitchenGuru/static/recipes", default="static/recipes/no_recipe.jpg")
+
 
 class RecipesImages(models.Model):
     recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to="KitchenGuru/static/recipes", null=True)
+    image = models.ImageField(upload_to="KitchenGuru/static/recipes", default="static/recipes/no_recipe.jpg")
 
 
 class Review(models.Model):

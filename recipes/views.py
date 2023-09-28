@@ -30,3 +30,7 @@ class CreateReviewView(generics.CreateAPIView):
         serializer = serializers.RecipeReviewSerializer(review, many=False)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+
+# class GetRecipes(generics.ListAPIView):
+#     queryset = models.Recipes.objects.all()
+#     serializer_class = serializers.GetRecipesSerializer
