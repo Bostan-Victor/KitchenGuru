@@ -28,7 +28,7 @@ class RegisterSerializer(serializers.Serializer):
         validated_data['password'] = make_password(validated_data['password'])
         user = models.Users.objects.create(**validated_data)
         profile = models.Profiles.objects.create(user=user)
-        rec_code = models.PasswordResetCode.objects.create(user=user)
+        rec_code = models.PasswordRecovery.objects.create(user=user)
         return user
     
 
@@ -51,11 +51,6 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 class PasswordRecoveryRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    
-
-class PasswordRevoveryConfirmSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    code = serializers.CharField(max_length=6)
 
 
 class PasswordRecoveryChange(serializers.Serializer):

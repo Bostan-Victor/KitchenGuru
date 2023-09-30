@@ -23,11 +23,11 @@ class Profiles(models.Model):
     updated = models.DateTimeField(null=True)
 
 
-class PasswordResetCode(models.Model):
+class PasswordRecovery(models.Model):
     user = models.OneToOneField(
         Users,
         on_delete=models.CASCADE,
         primary_key=True
     )
-    code = models.CharField(max_length=6, null=True)
     created_at = models.DateTimeField(null=True)
+    is_used = models.BooleanField(default=False)
