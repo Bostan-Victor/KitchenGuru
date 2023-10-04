@@ -34,9 +34,19 @@ class RecipeReviewSerializer(serializers.Serializer):
     rating = serializers.IntegerField()
 
 
-# class GetRecipesSerializer(serializers.Serializer):
-#     id = serializers.IntegerField()
-#     title = serializers.CharField(max_length=255)
-#     ingredients = serializers.CharField(max_length=255)
-#     instructions = serializers.CharField(max_length=255)
-#     image = serializers.ImageField()
+class GetRecipesImagesSerializer(serializers.Serializer):
+    image = serializers.ImageField()
+
+
+class GetRecipesSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField(max_length=255)
+    ingredients = serializers.CharField(max_length=255)
+    instructions = serializers.CharField(max_length=255)
+    images = serializers.SerializerMethodField()
+
+    
+    def get_images(self, obj):
+        images = obj.images.all()
+
+        return GetRecipesImagesSerializer(images, many=True).data

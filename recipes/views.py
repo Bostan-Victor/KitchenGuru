@@ -31,6 +31,6 @@ class CreateReviewView(generics.CreateAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
-# class GetRecipes(generics.ListAPIView):
-#     queryset = models.Recipes.objects.all()
-#     serializer_class = serializers.GetRecipesSerializer
+class GetRecipes(generics.ListAPIView):
+    queryset = models.Recipes.objects.all().prefetch_related('images')
+    serializer_class = serializers.GetRecipesSerializer
