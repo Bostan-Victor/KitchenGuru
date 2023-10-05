@@ -1,3 +1,7 @@
+from http.client import HTTPResponse
+from tokenize import Token
+from urllib import response
+from urllib.request import Request
 from rest_framework import generics, status
 from authorization import serializers
 from rest_framework.decorators import api_view, permission_classes
@@ -11,7 +15,7 @@ from django.core.signing import Signer
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.urls import reverse
-
+from django.contrib.auth import logout
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = serializers.RegisterSerializer
@@ -36,6 +40,11 @@ def login_view(request):
     if check_password(data['password'], user.password):
         refresh = RefreshToken.for_user(user)
         access_token =  str(refresh.access_token)
+        token_object = models.Tokens.objects.get(user_id=user.id)
+        token_object.access_token = access_token
+        token_object.refresh_token = str(refresh)
+        token_object.save()
+        
         if user.is_superuser:
             return Response({"message": "Admin logged in",
                              "access_token": access_token,
@@ -123,3 +132,15 @@ class PasswordRecoveryChangeView(generics.UpdateAPIView):
                 pass_recovery_object.is_used = True
                 pass_recovery_object.save()
                 return Response({"message": "Password updated succesfully!"}, status=status.HTTP_200_OK)
+
+
+class Logout_View(generics.UpdateAPIView):
+    permission_classes = (IsAuthenticated,)
+    def post(self,request):
+        user_id = request.user.id
+        token = models.Tokens.objects.get(user_id=user_id)
+        token.access_token = ""
+        token.refresh_token = ""
+        token.save()
+        return Response({"message": "User logged out succesfully!"})
+        
