@@ -35,8 +35,10 @@ def login_view(request):
         profile = models.Profiles.objects.get(user_id=user.id)
         profile.last_login = datetime.now()
         profile.save()
-    except:
+    except models.Profiles.DoesNotExist:
+
         return Response({"message": "Profile does not exist!"}, status=status.HTTP_404_NOT_FOUND)
+    token, created = models.Tokens.objects.get_or_create()
     if check_password(data['password'], user.password):
         refresh = RefreshToken.for_user(user)
         access_token =  str(refresh.access_token)
@@ -84,7 +86,7 @@ def password_recovery_request_view(request):
     data = request.data
     try:
         user = models.Users.objects.get(email=data['email'])
-    except:
+    except models.Users.DoesNotExist:
         return Response({'message': 'There is no account created with this email!'}, status=status.HTTP_404_NOT_FOUND)
     pass_recovery_object = models.PasswordRecovery.objects.get(user_id=user.id)
     pass_recovery_object.created_at = datetime.now()
@@ -136,11 +138,17 @@ class PasswordRecoveryChangeView(generics.UpdateAPIView):
 
 class Logout_View(generics.UpdateAPIView):
     permission_classes = (IsAuthenticated,)
-    def post(self,request):
+
+    def post(self, request):
         user_id = request.user.id
-        token = models.Tokens.objects.get(user_id=user_id)
-        token.access_token = ""
-        token.refresh_token = ""
+
+        try: 
+            token = models.Tokens.objects.get(user_id=user_id)
+        except models.Tokens.DoesNotExist:  
+            return Response({"message": f"For user {request.user} could not find any tokens"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        token.access_token = None
+        token.refresh_token = None
         token.save()
         return Response({"message": "User logged out succesfully!"})
         
