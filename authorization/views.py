@@ -1,3 +1,7 @@
+from http.client import HTTPResponse
+from tokenize import Token
+from urllib import response
+from urllib.request import Request
 from rest_framework import generics, status
 from authorization import serializers
 from rest_framework.decorators import api_view, permission_classes
@@ -131,11 +135,12 @@ class PasswordRecoveryChangeView(generics.UpdateAPIView):
 
 
 class Logout_View(generics.UpdateAPIView):
-    # serializer_class = serializers.PasswordRecoveryChange
-    # def uptade(self, request):
-    
-    # token_object.access_token = access_token
-    # token_object.refresh_token = str(refresh)
-    
-    RefreshToken = RefreshToken.objects.get(user_id=user.id)
-    RefreshToken.delete()
+    permission_classes = (IsAuthenticated,)
+    def post(self,request):
+        user_id = request.user.id
+        token = models.Tokens.objects.get(user_id=user_id)
+        token.access_token = ""
+        token.refresh_token = ""
+        token.save()
+        return Response({"message": "User logged out succesfully!"})
+        

@@ -1,3 +1,4 @@
+from cmath import log
 from django.urls import path
 from authorization import views
 from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
@@ -9,5 +10,6 @@ urlpatterns = [
     path("token", TokenObtainPairView.as_view(), name= 'token_obtain_pair'),
     path("token/refresh", TokenRefreshView.as_view(), name='token_refresh'),
     path('password-recovery-request', views.password_recovery_request_view),
-    path('password-recovery-change', views.PasswordRecoveryChangeView.as_view(), name='password-recovery-change')
+    path('password-recovery-change', views.PasswordRecoveryChangeView.as_view(), name='password-recovery-change'),
+    path('logout', views.Logout_View.as_view(), name='auth_logout')
 ]

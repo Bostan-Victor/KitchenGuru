@@ -66,3 +66,6 @@ class PasswordRecoveryChange(serializers.Serializer):
         serializer.is_valid(raise_exception=True)
         
         return self.update(request, *args, **kwargs)
+
+class LogOut(serializers.Serializer):
+    user_id = serializers.IntegerField()
