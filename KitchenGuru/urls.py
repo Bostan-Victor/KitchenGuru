@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,4 +29,4 @@ urlpatterns = [
         path("best100/", include("filtering_test.urls")),
         path("ai-recipes/", include("ai_recipes.urls"))
     ]))
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

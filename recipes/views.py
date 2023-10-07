@@ -11,6 +11,13 @@ class CreateRecipeView(generics.CreateAPIView):
     serializer_class = serializers.CreateRecipeSerializer
     permission_classes = [IsAuthenticated]
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid(raise_exception=True):
+            recipe = serializer.save(created_by=request.user)
+            return Response({'message': 'Recipe created!'}, status=status.HTTP_201_CREATED)
+
 
 class CreateReviewView(generics.CreateAPIView):
     serializer_class = serializers.RecipeReviewSerializer
@@ -31,6 +38,12 @@ class CreateReviewView(generics.CreateAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
-# class GetRecipes(generics.ListAPIView):
-#     queryset = models.Recipes.objects.all()
-#     serializer_class = serializers.GetRecipesSerializer
+class GetRecipes(generics.ListAPIView):
+    queryset = models.Recipes.objects.all().prefetch_related('images')
+    serializer_class = serializers.GetRecipesSerializer
+
+
+class GetIngredients(generics.ListAPIView):
+    queryset = models.Ingredients.objects.all()
+    serializer_class = serializers.GetIngredientsSerializer
+    permission_classes = [IsAuthenticated]

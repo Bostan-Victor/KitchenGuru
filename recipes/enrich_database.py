@@ -1,40 +1,52 @@
 import csv
-import shutil
 import json
 
 file_path = '../KitchenGuru/static/recipes/recipes.csv'
-path_start = '../KitchenGuru/static/recipes/recipes_images/'
-images_path_from = 'C:/Users/Vain/Desktop/Food Images/'
-images_path_to = 'C:/Users/Vain/Desktop/Kitchen Guru/KitchenGuru/KitchenGuru/static/recipes_images/'
-n_recipes = 5
 
-filename = open(file_path, 'r', encoding='utf8')
+filename = open(file_path, 'r', encoding='utf-8')
 f = csv.DictReader(filename)
 
 data = []
 
-i = 50
-for col in f:
-    dt = {
-        'model': 'recipes.Recipes',
-        'fields': {}
-    }
-    data_temp = {
-        'title': '',
-        'ingredients': '',
-        'instructions': '',
-        'image_name': ''
-    }
-    data_temp['title'] = col['Title']
-    data_temp['ingredients'] = col['Cleaned_Ingredients'][1:-1]
-    data_temp['instructions'] = col['Instructions']
-    data_temp['image_name'] = path_start + col['Image_Name'] + ".jpg"
-    shutil.copy2(images_path_from + col['Image_Name'] + '.jpg', images_path_to + col['Image_Name'] + '.jpg')
-    dt['fields'] = data_temp
-    data.append(dt)
-    i -= 1
-    if not i:
-        break
+# Load recipes
+# for col in f:
+#     dt = {
+#         'model': 'recipes.Recipes',
+#         'fields': {}
+#     }
+#     data_temp = {
+#         'title': '',
+#         'ingredients': '',
+#         'instructions': '',
+#         'category': '',
+#         'duration': '',
+#         'ingredient_tags': ''
+#     }
+#     data_temp['title'] = col['\ufefftitle']
+#     data_temp['ingredients'] = col['Ingredients']
+#     data_temp['instructions'] = col['Instructions']
+#     data_temp['category'] = col['Category'].lower()
+#     data_temp['duration'] = int(col['Duration'])
+#     data_temp['ingredient_tags'] = col['ingredient_tags'].lower()
+#     dt['fields'] = data_temp
+#     data.append(dt)
 
-with open('fixtures/recipes.json', 'w') as f:
+# Load ingredients
+ingredients = []
+for col in f:
+    ingredients_temp = col['ingredient_tags'].lower().split(', ')
+    for ingredient in ingredients_temp:
+        if ingredient not in ingredients:
+            ingredients.append(ingredient)
+
+for ingredient in ingredients:
+    dt = {
+        'model': 'recipes.Ingredients',
+        'fields': {
+            'name': ingredient
+        }
+    }
+    data.append(dt)
+
+with open('fixtures/ingredients.json', 'w') as f:
     json.dump(data, f)

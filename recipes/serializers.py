@@ -14,6 +14,9 @@ class CreateRecipeSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=255)
     ingredients = serializers.CharField(max_length=255)
     instructions = serializers.CharField(max_length=255)
+    category = serializers.CharField(max_length=10)
+    duration = serializers.IntegerField()
+    ingredient_tags = serializers.CharField(max_length=255)
     image = CreateRecipesImageSerializer(many=True, write_only=True, required=False)
 
     def create(self, validated_data, *args, **kwargs):
@@ -34,9 +37,27 @@ class RecipeReviewSerializer(serializers.Serializer):
     rating = serializers.IntegerField()
 
 
-# class GetRecipesSerializer(serializers.Serializer):
-#     id = serializers.IntegerField()
-#     title = serializers.CharField(max_length=255)
-#     ingredients = serializers.CharField(max_length=255)
-#     instructions = serializers.CharField(max_length=255)
-#     image = serializers.ImageField()
+class GetRecipesImagesSerializer(serializers.Serializer):
+    image = serializers.ImageField()
+
+
+class GetRecipesSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField(max_length=255)
+    ingredients = serializers.CharField(max_length=255)
+    instructions = serializers.CharField(max_length=255)
+    category = serializers.CharField(max_length=10)
+    duration = serializers.IntegerField()
+    ingredient_tags = serializers.CharField(max_length=255)
+    images = serializers.SerializerMethodField()
+
+    
+    def get_images(self, obj):
+        images = obj.images.all()
+
+        return GetRecipesImagesSerializer(images, many=True).data
+    
+
+class GetIngredientsSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField(max_length=255)

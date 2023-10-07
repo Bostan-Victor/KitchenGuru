@@ -31,3 +31,12 @@ class PasswordRecovery(models.Model):
     )
     created_at = models.DateTimeField(null=True)
     is_used = models.BooleanField(default=False)
+
+class Tokens(models.Model):
+    user = models.OneToOneField(
+        Users, 
+        on_delete=models.CASCADE,
+        primary_key=True
+    )
+    access_token = models.CharField(max_length=255, null=True)
+    refresh_token = models.CharField(max_length=255, null=True)

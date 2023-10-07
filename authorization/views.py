@@ -1,3 +1,7 @@
+from http.client import HTTPResponse
+from tokenize import Token
+from urllib import response
+from urllib.request import Request
 from rest_framework import generics, status
 from authorization import serializers
 from rest_framework.decorators import api_view, permission_classes
@@ -11,7 +15,7 @@ from django.core.signing import Signer
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.urls import reverse
-
+from django.contrib.auth import logout
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = serializers.RegisterSerializer
@@ -31,11 +35,18 @@ def login_view(request):
         profile = models.Profiles.objects.get(user_id=user.id)
         profile.last_login = datetime.now()
         profile.save()
-    except:
+    except models.Profiles.DoesNotExist:
+
         return Response({"message": "Profile does not exist!"}, status=status.HTTP_404_NOT_FOUND)
+    # token, created = models.Tokens.objects.get_or_create()
     if check_password(data['password'], user.password):
         refresh = RefreshToken.for_user(user)
         access_token =  str(refresh.access_token)
+        token_object = models.Tokens.objects.get(user_id=user.id)
+        token_object.access_token = access_token
+        token_object.refresh_token = str(refresh)
+        token_object.save()
+        
         if user.is_superuser:
             return Response({"message": "Admin logged in",
                              "access_token": access_token,
@@ -75,7 +86,7 @@ def password_recovery_request_view(request):
     data = request.data
     try:
         user = models.Users.objects.get(email=data['email'])
-    except:
+    except models.Users.DoesNotExist:
         return Response({'message': 'There is no account created with this email!'}, status=status.HTTP_404_NOT_FOUND)
     pass_recovery_object = models.PasswordRecovery.objects.get(user_id=user.id)
     pass_recovery_object.created_at = datetime.now()
@@ -123,3 +134,21 @@ class PasswordRecoveryChangeView(generics.UpdateAPIView):
                 pass_recovery_object.is_used = True
                 pass_recovery_object.save()
                 return Response({"message": "Password updated succesfully!"}, status=status.HTTP_200_OK)
+
+
+class Logout_View(generics.UpdateAPIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        user_id = request.user.id
+
+        try: 
+            token = models.Tokens.objects.get(user_id=user_id)
+        except models.Tokens.DoesNotExist:  
+            return Response({"message": f"For user {request.user} could not find any tokens"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        token.access_token = None
+        token.refresh_token = None
+        token.save()
+        return Response({"message": "User logged out succesfully!"})
+        

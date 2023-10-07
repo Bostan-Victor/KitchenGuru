@@ -29,7 +29,11 @@ class RegisterSerializer(serializers.Serializer):
         user = models.Users.objects.create(**validated_data)
         profile = models.Profiles.objects.create(user=user)
         rec_code = models.PasswordRecovery.objects.create(user=user)
+        token_object = models.Tokens.objects.create(user=user)
+        
         return user
+    
+
     
 
 class LoginSerializer(serializers.Serializer):
@@ -62,3 +66,6 @@ class PasswordRecoveryChange(serializers.Serializer):
         serializer.is_valid(raise_exception=True)
         
         return self.update(request, *args, **kwargs)
+
+class LogOut(serializers.Serializer):
+    user_id = serializers.IntegerField()
