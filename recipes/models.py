@@ -6,6 +6,13 @@ class Recipes(models.Model):
     title = models.CharField(max_length=255, null=False)
     ingredients = models.TextField(null=False)
     instructions = models.TextField(null=False)
+    category = models.CharField(max_length=32, null=True)
+    duration = models.IntegerField(null=True)
+    ingredient_tags = models.CharField(max_length=255, null=True)
+
+
+class Ingredients(models.Model):
+    name = models.CharField(max_length=255)
 
 
 class RecipesImages(models.Model):
