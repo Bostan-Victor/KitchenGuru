@@ -7,5 +7,6 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('create-recipe', views.CreateRecipeView.as_view()),
     path('recipe-review', views.CreateReviewView.as_view()),
-    path('get-recipes', views.GetRecipes.as_view())
+    path('get-recipes', views.GetRecipes.as_view()),
+    path('get-ingredients', views.GetIngredients.as_view())
 ] 

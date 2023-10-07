@@ -3,12 +3,22 @@ from users.models import Users
 
 
 class Recipes(models.Model):
+    CATEGORY_CHOICES = (
+        ('soups', 'Soups'),
+        ('salad', 'Salads'),
+        ('seafood', 'Sea Food'),
+        ('desserts', 'Desserts'),
+        ('fast_food', 'Fast Food'),
+        ('meat', 'Meat')
+    )
+
     title = models.CharField(max_length=255, null=False)
     ingredients = models.TextField(null=False)
     instructions = models.TextField(null=False)
-    category = models.CharField(max_length=32, null=True)
+    category = models.CharField(max_length=10, null=True, choices=CATEGORY_CHOICES)
     duration = models.IntegerField(null=True)
     ingredient_tags = models.CharField(max_length=255, null=True)
+    created_by = models.ForeignKey(Users, null=True, on_delete=models.CASCADE)
 
 
 class Ingredients(models.Model):

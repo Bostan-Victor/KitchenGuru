@@ -14,6 +14,9 @@ class CreateRecipeSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=255)
     ingredients = serializers.CharField(max_length=255)
     instructions = serializers.CharField(max_length=255)
+    category = serializers.CharField(max_length=10)
+    duration = serializers.IntegerField()
+    ingredient_tags = serializers.CharField(max_length=255)
     image = CreateRecipesImageSerializer(many=True, write_only=True, required=False)
 
     def create(self, validated_data, *args, **kwargs):
@@ -43,6 +46,9 @@ class GetRecipesSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=255)
     ingredients = serializers.CharField(max_length=255)
     instructions = serializers.CharField(max_length=255)
+    category = serializers.CharField(max_length=10)
+    duration = serializers.IntegerField()
+    ingredient_tags = serializers.CharField(max_length=255)
     images = serializers.SerializerMethodField()
 
     
@@ -50,3 +56,8 @@ class GetRecipesSerializer(serializers.Serializer):
         images = obj.images.all()
 
         return GetRecipesImagesSerializer(images, many=True).data
+    
+
+class GetIngredientsSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField(max_length=255)

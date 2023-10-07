@@ -38,7 +38,7 @@ def login_view(request):
     except models.Profiles.DoesNotExist:
 
         return Response({"message": "Profile does not exist!"}, status=status.HTTP_404_NOT_FOUND)
-    token, created = models.Tokens.objects.get_or_create()
+    # token, created = models.Tokens.objects.get_or_create()
     if check_password(data['password'], user.password):
         refresh = RefreshToken.for_user(user)
         access_token =  str(refresh.access_token)
