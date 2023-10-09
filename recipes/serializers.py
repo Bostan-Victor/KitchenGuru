@@ -75,3 +75,7 @@ class SearchRecipesSerializer(serializers.Serializer):
     def get_images(self, obj):
         images = obj['recipe'].images.all()
         return GetRecipesImagesSerializer(images, many=True).data
+    
+    
+class AddFavoritesSerialier(serializers.Serializer):
+    recipe_id = serializers.CharField(max_length=255)
