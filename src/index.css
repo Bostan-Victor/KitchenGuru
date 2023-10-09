@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Rhodium+Libre&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer components {
+    .btn-primary {
+      @apply py-2 px-4 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75;
+    }
+  }
+  .whitespace-pre {
+    white-space: pre;
+  }
+
+  .bg{
+    background-image: url(./assets/logo.png);
+    margin : 0;
+    
+    background-size: cover;
+  }
+  .circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+  }
+  .circles-div {
+    width: 400px;
+    height: 400px;
+    align-self: center;
+    color: black;
+  }
+  
