@@ -8,5 +8,6 @@ urlpatterns = [
     path('create-recipe', views.CreateRecipeView.as_view()),
     path('recipe-review', views.CreateReviewView.as_view()),
     path('get-recipes', views.GetRecipes.as_view()),
-    path('get-ingredients', views.GetIngredients.as_view())
+    path('get-ingredients', views.GetIngredients.as_view()),
+    path('add-favorites', views.AddFavorites.as_view())
 ] 

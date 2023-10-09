@@ -61,3 +61,7 @@ class GetRecipesSerializer(serializers.Serializer):
 class GetIngredientsSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField(max_length=255)
+
+
+class AddFavoritesSerialier(serializers.Serializer):
+    recipe_id = serializers.CharField(max_length=255)

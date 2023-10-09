@@ -30,6 +30,11 @@ class RecipesImages(models.Model):
     image = models.ImageField(upload_to="recipes/", default="static/recipes/no_recipe.jpg")
 
 
+class Favorites(models.Model):
+    user = models.ForeignKey(Users, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
+
+
 class Review(models.Model):
     recipes = models.ForeignKey(Recipes, on_delete=models.CASCADE, null=True)
     user = models.ForeignKey(Users, verbose_name="User", on_delete=models.CASCADE)
