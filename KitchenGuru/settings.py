@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     "recipes.apps.RecipesConfig",
     "filtering_test.apps.FilteringTestConfig",
     "ai_recipes.apps.AiRecipesConfig",
-    "corsheaders"
+    "corsheaders",
+    "django_filters"
 ]
 
 MIDDLEWARE = [
@@ -63,7 +64,7 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-CHATGPT_API_KEY = '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'
+CHATGPT_API_KEY = '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'
 
 ROOT_URLCONF = 'KitchenGuru.urls'
 
@@ -141,6 +142,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
 }

@@ -50,11 +50,9 @@ class GetRecipesSerializer(serializers.Serializer):
     duration = serializers.IntegerField()
     ingredient_tags = serializers.CharField(max_length=255)
     images = serializers.SerializerMethodField()
-
     
     def get_images(self, obj):
         images = obj.images.all()
-
         return GetRecipesImagesSerializer(images, many=True).data
     
 
