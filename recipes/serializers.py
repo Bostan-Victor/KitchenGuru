@@ -59,3 +59,19 @@ class GetRecipesSerializer(serializers.Serializer):
 class GetIngredientsSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField(max_length=255)
+
+
+class SearchRecipesSerializer(serializers.Serializer):
+    id = serializers.IntegerField(source='recipe.id')
+    title = serializers.CharField(source='recipe.title', max_length=255)
+    ingredients = serializers.CharField(source='recipe.ingredients', max_length=255)
+    instructions = serializers.CharField(source='recipe.instructions', max_length=255)
+    category = serializers.CharField(source='recipe.category', max_length=10)
+    duration = serializers.IntegerField(source='recipe.duration')
+    ingredient_tags = serializers.CharField(source='recipe.ingredient_tags', max_length=255)
+    images = serializers.SerializerMethodField()
+    matching_ingredients = serializers.CharField(max_length=255)
+
+    def get_images(self, obj):
+        images = obj['recipe'].images.all()
+        return GetRecipesImagesSerializer(images, many=True).data

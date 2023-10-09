@@ -102,7 +102,7 @@ class FilteringView(generics.ListAPIView):
 
 
 class SearchRecipesView(generics.ListAPIView):
-    serializer_class = serializers.GetRecipesSerializer
+    serializer_class = serializers.SearchRecipesSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['category']
     def list(self, request):
@@ -121,18 +121,17 @@ class SearchRecipesView(generics.ListAPIView):
             if len(matching_ingredients) > 0:
                 matched_recipes.append({
                 'recipe': recipe,
-                'match_count': len(matching_ingredients)
+                'matching_ingredients': ', '.join(ingredient for ingredient in matching_ingredients).strip()
                 })
         if matched_recipes:
-            sorted_recipes = sorted(matched_recipes, key=lambda x: x['match_count'], reverse=True)
-            sorted_recipes = [entry['recipe'] for entry in sorted_recipes]
+            sorted_recipes = sorted(matched_recipes, key=lambda x: len(x['matching_ingredients']), reverse=True)
         else:
             return Response({"message": "No recipes have the ingredients provided"}, status=status.HTTP_404_NOT_FOUND)
 
         page = self.paginate_queryset(sorted_recipes)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
 
 
 class FilterRecipesView(generics.ListAPIView):
