@@ -64,7 +64,7 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-CHATGPT_API_KEY = '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'
+CHATGPT_API_KEY = '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'
 
 ROOT_URLCONF = 'KitchenGuru.urls'
 

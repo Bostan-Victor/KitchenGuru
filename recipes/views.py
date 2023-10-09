@@ -1,4 +1,4 @@
-from rest_framework import generics, status
+from rest_framework import generics, status, views
 from recipes import serializers
 from rest_framework.permissions import IsAuthenticated
 from recipes import models
@@ -7,11 +7,11 @@ from datetime import datetime, timedelta
 from django.db.models import Max, F
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
+from KitchenGuru import settings
+import openai
 
 
-
-
-
+openai.api_key = settings.CHATGPT_API_KEY
 
 class CreateRecipeView(generics.CreateAPIView):
     serializer_class = serializers.CreateRecipeSerializer
@@ -156,7 +156,37 @@ class SearchRecipesView(generics.ListAPIView):
         return self.get_paginated_response(serializer.data)
 
 
+def send_code_to_api(categories, ingredients):
+    try:
+        res = openai.ChatCompletion.create(
+            model='gpt-3.5-turbo',
+            messages=[
+                {"role": "system", "content": "You are a food expert."},
+                {"role": "user", "content": f"Provide me a recipe from the categories {categories} that I can make with ingredients such as {ingredients} ?"},
+            ]
+        )
+        return res["choices"][0]["message"]["content"], status.HTTP_200_OK
+    except openai.error.AuthenticationError:
+        return "Invalid API key for OpenAI.", status.HTTP_401_UNAUTHORIZED
+    except KeyError:
+        return "Unexpected response format from OpenAI.", status.HTTP_500_INTERNAL_SERVER_ERROR
+    except:
+        return "There was an issue fetching the recipe. Please try again later.", status.HTTP_500_INTERNAL_SERVER_ERROR
+
+
+class AIRecipesView(views.APIView):
+    def post(self, request):
+        user_categories = request.data.get('categories', [])
+        user_ingredients = request.data.get('ingredients', None)
+        
+        if user_categories and user_ingredients:
+            gpt_response, http_status = send_code_to_api(user_categories, user_ingredients)
+            return Response({"message": gpt_response}, status=http_status)
+        return Response({"message": "Invalid input."}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class FilterRecipesView(generics.ListAPIView):
     queryset = models.Recipes.objects.all()
     serializer = serializers.GetRecipesSerializer
+
+
