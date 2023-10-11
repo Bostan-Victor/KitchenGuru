@@ -45,8 +45,13 @@ class CreateReviewView(generics.CreateAPIView):
     
 
 class GetRecipes(generics.ListAPIView):
-    queryset = models.Recipes.objects.all().prefetch_related('images')
     serializer_class = serializers.GetRecipesSerializer
+
+    def get_queryset(self):
+        category = self.request.query_params.get('category', None)
+        if category:
+            return models.Recipes.objects.filter(category=category).prefetch_related('images')
+        return models.Recipes.objects.all().prefetch_related('images')
 
 
 class GetIngredients(generics.ListAPIView):
