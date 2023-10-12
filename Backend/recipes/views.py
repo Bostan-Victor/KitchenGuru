@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from recipes import models
 from rest_framework.response import Response
 from datetime import datetime, timedelta
-from django.db.models import Max, F
+from django.db.models import Max, F, Subquery
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 from KitchenGuru import settings
@@ -67,7 +67,10 @@ class AddFavorites(generics.CreateAPIView):
     def create(self, request):
         user = request.user
         recipe_id = request.data['recipe_id']
-        recipe = models.Recipes.objects.get(id=recipe_id)
+        try:
+            recipe = models.Recipes.objects.get(id=recipe_id)
+        except models.Recipes.DoesNotExist:
+            return Response({'message': 'This recipe does not exist!'}, status=status.HTTP_404_NOT_FOUND)
 
         favorites_exists = models.Favorites.objects.filter(user=user, recipe=recipe).exists()
 
@@ -81,6 +84,26 @@ class AddFavorites(generics.CreateAPIView):
                 'user_id': user.id,
                 'recipes_id': recipe_id
             }, status=status.HTTP_201_CREATED)
+        
+
+class GetFavorites(generics.ListAPIView):
+    serializer_class = serializers.GetRecipesSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user_id = self.request.user.id
+        favorites_entries = models.Favorites.objects.filter(user_id=user_id)
+        recipe_ids = favorites_entries.values('recipe_id')
+        return models.Recipes.objects.filter(id__in=Subquery(recipe_ids)).prefetch_related('images')
+    
+    def list(self, request):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({'message': 'This user has no favorite recipes'}, status=status.HTTP_404_NOT_FOUND)
+        
+        return super(GetFavorites, self).list(request)
+        
         
         
 class FilteringView(generics.ListAPIView):
