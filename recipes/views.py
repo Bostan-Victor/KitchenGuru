@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from recipes import models
 from rest_framework.response import Response
 from datetime import datetime, timedelta
-from django.db.models import Max, F
+from django.db.models import Max, Count, Avg
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 from KitchenGuru import settings
@@ -79,18 +79,18 @@ class AddFavorites(generics.CreateAPIView):
         
         
 class FilteringView(generics.ListAPIView):
-    serializer_class = serializers.GetRecipesSerializer
-    filter_backends = [filters.OrderingFilter]
-    ordering_fields = ['duration', 'id']
-    ordering = ['duration']
-    # ordering_fields = ['comment_count', 'rating', 'favorites_count']
-    # ordering = ['rating']
+    serializer_class = serializers.FilterRecipesSerializer
+    ordering_fields = ['favorites_count', 'average_rating', 'review_count']
 
     def list(self, request):
-        queryset = models.Recipes.objects.all()
+        queryset = models.Recipes.objects.annotate(
+                favorites_count=Count('favorites', distinct=True),
+                review_count=Count('review', distinct=True),
+                average_rating=Avg('review__rating')
+            )
         db_max_duration = models.Recipes.objects.aggregate(db_max_duration=Max('duration'))['db_max_duration']
 
-        # sort_by = self.request.query_params.get('sort_by')
+        sort_by = self.request.query_params.get('sort_by')
         categories = self.request.query_params.get('category')
         
         try:
@@ -105,23 +105,19 @@ class FilteringView(generics.ListAPIView):
         queryset = queryset.filter(duration__gte=duration_min, duration__lte=duration_max)
         
         if categories:
-            categories_list = categories.split(',')
+            categories_list = categories.split(', ')
             queryset = queryset.filter(category__in=categories_list)
         
-        # order_by_field = sort_by
-        # order_by_field = sort_by if sort_by in self.ordering_fields else self.ordering[0]
-        # queryset = queryset.order_by(order_by_field)
+        order_by_field = sort_by if sort_by in self.ordering_fields else self.ordering_fields[0]
+        queryset = queryset.order_by('-' + order_by_field)
 
         if not queryset.exists():
             return Response({"message": "There are no recipes that match these filters"}, status=status.HTTP_404_NOT_FOUND)
         
         page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class SearchRecipesView(generics.ListAPIView):
@@ -171,7 +167,7 @@ def send_code_to_api(categories, ingredients):
     except KeyError:
         return "Unexpected response format from OpenAI.", status.HTTP_500_INTERNAL_SERVER_ERROR
     except:
-        return "There was an issue fetching the recipe. Please try again later.", status.HTTP_500_INTERNAL_SERVER_ERROR
+        return "There was an issue creating the recipe.", status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
 class AIRecipesView(views.APIView):
