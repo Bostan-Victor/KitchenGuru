@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     "gallery",
     "recipes.apps.RecipesConfig",
     "filtering_test.apps.FilteringTestConfig",
-    "ai_recipes.apps.AiRecipesConfig",
     "corsheaders",
     "django_filters"
 ]
@@ -64,7 +63,7 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-CHATGPT_API_KEY = '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'
+CHATGPT_API_KEY = os.environ.get('API_KEY')
 
 ROOT_URLCONF = 'KitchenGuru.urls'
 

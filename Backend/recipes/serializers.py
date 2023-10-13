@@ -79,3 +79,22 @@ class SearchRecipesSerializer(serializers.Serializer):
     
 class AddFavoritesSerialier(serializers.Serializer):
     recipe_id = serializers.CharField(max_length=255)
+
+
+
+class FilterRecipesSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField(max_length=255)
+    ingredients = serializers.CharField(max_length=255)
+    instructions = serializers.CharField(max_length=255)
+    category = serializers.CharField(max_length=10)
+    duration = serializers.IntegerField()
+    ingredient_tags = serializers.CharField(max_length=255)
+    images = serializers.SerializerMethodField()
+    favorites_count = serializers.IntegerField()
+    review_count = serializers.IntegerField()
+    average_rating = serializers.FloatField()
+    
+    def get_images(self, obj):
+        images = obj.images.all()
+        return GetRecipesImagesSerializer(images, many=True).data

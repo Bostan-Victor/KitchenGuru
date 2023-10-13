@@ -27,6 +27,5 @@ urlpatterns = [
         path("admin/", include("superuser.urls")),
         path("recipes/", include("recipes.urls")),
         path("best100/", include("filtering_test.urls")),
-        path("ai-recipes/", include("ai_recipes.urls"))
     ]))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
