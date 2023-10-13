@@ -57,7 +57,7 @@ class GetRecipes(generics.ListAPIView):
 class GetIngredients(generics.ListAPIView):
     queryset = models.Ingredients.objects.all()
     serializer_class = serializers.GetIngredientsSerializer
-    permission_classes = [IsAuthenticated]
+    pagination_class = None
 
 
 class AddFavorites(generics.CreateAPIView):
