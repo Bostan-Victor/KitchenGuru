@@ -209,8 +209,30 @@ class AIRecipesView(views.APIView):
         return Response({"message": "Invalid input."}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class FilterRecipesView(generics.ListAPIView):
-    queryset = models.Recipes.objects.all()
-    serializer = serializers.GetRecipesSerializer
+class AddWatchList(generics.CreateAPIView):
+    serializer_class = serializers.AddFavoritesSerialier
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        user = request.user
+        recipe_id = request.data['recipe_id']
+        try:
+            recipe = models.Recipes.objects.get(id=recipe_id)
+        except models.Recipes.DoesNotExist:
+            return Response({'message': 'This recipe does not exist!'}, status=status.HTTP_404_NOT_FOUND)
+
+        favorites_exists = models.Favorites.objects.filter(user=user, recipe=recipe).exists()
+
+        if favorites_exists:
+            return Response({'message': f'This recipe was already added to favorites for user_id={user.id}!'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            favorites_object = models.Favorites.objects.create(user=user, recipe=recipe)
+
+            return Response({
+                'message': 'The recipe was added to favorites!',
+                'user_id': user.id,
+                'recipes_id': recipe_id
+            }, status=status.HTTP_201_CREATED)
+
 
 
