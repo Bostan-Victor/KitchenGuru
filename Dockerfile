@@ -13,6 +13,7 @@ ENV APP_NAME=KITCHENGURU
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-
-CMD gunicorn KitchenGuru.wsgi:application -b 0.0.0.0:8000
+EXPOSE 8000
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+#CMD gunicorn KitchenGuru.wsgi:application -b 0.0.0.0:8000
 
