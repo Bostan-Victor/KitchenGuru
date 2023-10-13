@@ -31,22 +31,34 @@ data = []
 #     dt['fields'] = data_temp
 #     data.append(dt)
 
-# Load ingredients
-ingredients = []
-for col in f:
-    ingredients_temp = col['ingredient_tags'].lower().split(', ')
-    for ingredient in ingredients_temp:
-        if ingredient not in ingredients:
-            ingredients.append(ingredient)
+# # Load ingredients
+# ingredients = []
+# for col in f:
+#     ingredients_temp = col['ingredient_tags'].lower().split(', ')
+#     for ingredient in ingredients_temp:
+#         if ingredient not in ingredients:
+#             ingredients.append(ingredient)
 
-for ingredient in ingredients:
+# for ingredient in ingredients:
+#     dt = {
+#         'model': 'recipes.Ingredients',
+#         'fields': {
+#             'name': ingredient
+#         }
+#     }
+#     data.append(dt)
+
+rec_id = 1
+for col in f:
     dt = {
-        'model': 'recipes.Ingredients',
+        'model': 'recipes.RecipesImages',
         'fields': {
-            'name': ingredient
+            'image': 'recipes/no_recipe.jpg',
+            'recipe_id': rec_id
         }
     }
+    rec_id += 1
     data.append(dt)
 
-with open('fixtures/ingredients.json', 'w') as f:
+with open('fixtures/recipe_images.json', 'w') as f:
     json.dump(data, f)
