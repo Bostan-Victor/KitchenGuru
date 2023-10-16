@@ -10,7 +10,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from KitchenGuru import settings
 import openai
 
-
 openai.api_key = settings.CHATGPT_API_KEY
 
 class CreateRecipeView(generics.CreateAPIView):
@@ -195,16 +194,28 @@ def send_code_to_api(categories, ingredients):
             model='gpt-3.5-turbo',
             messages=[
                 {"role": "system", "content": "You are a food expert."},
-                {"role": "user", "content": f"Provide me a recipe from the categories {categories} that I can make with ingredients such as {ingredients} ?"},
+                {"role": "user", "content": f'''Provide me a recipe from the categories {categories} that I can make with ingredients such as {ingredients} ? 
+                 Separate the title, ingredients and instructions in the response and make sure that the response starts with
+                 Title: title of the recipe\\n'''},
             ]
         )
-        return res["choices"][0]["message"]["content"], status.HTTP_200_OK
+        response_message = res["choices"][0]["message"]["content"]
+        recipe_title = response_message.split("\n")[0][7:]
+        recipe_image_url = create_ai_recipe_image(recipe_title)
+        return {"message": response_message, "image_url": recipe_image_url}, status.HTTP_200_OK
     except openai.error.AuthenticationError:
         return "Invalid API key for OpenAI.", status.HTTP_401_UNAUTHORIZED
     except KeyError:
         return "Unexpected response format from OpenAI.", status.HTTP_500_INTERNAL_SERVER_ERROR
-    except:
-        return "There was an issue creating the recipe.", status.HTTP_500_INTERNAL_SERVER_ERROR
+
+
+def create_ai_recipe_image(recipe_title):
+    response = openai.Image.create(
+        prompt=str(recipe_title),
+        n=1,
+        size="512x512"
+    )
+    return response['data'][0]['url']
 
 
 class AIRecipesView(views.APIView):
@@ -214,7 +225,7 @@ class AIRecipesView(views.APIView):
         
         if user_categories and user_ingredients:
             gpt_response, http_status = send_code_to_api(user_categories, user_ingredients)
-            return Response({"message": gpt_response}, status=http_status)
+            return Response(gpt_response, status=http_status)
         return Response({"message": "Invalid input."}, status=status.HTTP_400_BAD_REQUEST)
 
 
