@@ -10,6 +10,7 @@ from django.contrib.auth.hashers import check_password
 from users import models
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt import views
 from django.core.mail import send_mail
 from django.core.signing import Signer
 from datetime import datetime, timedelta
@@ -56,6 +57,22 @@ def login_view(request):
                     "access_token": access_token,
                     "refresh_token": str(refresh) }, status=status.HTTP_200_OK)
     return Response({"message": "Password invalid!"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RefreshTokenView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request):
+        user_id = request.user.id
+        try:
+            user_tokens = models.Tokens.objects.get(user_id=user_id)
+        except:
+            return Response({'message': 'The provided access token is invalid!'}, status=status.HTTP_404_NOT_FOUND)
+        refresh_token = RefreshToken(user_tokens.refresh_token)
+        new_access_token = str(refresh_token.access_token)
+        user_tokens.access_token = new_access_token
+        user_tokens.save()
+        return Response({'access_token': new_access_token}, status=status.HTTP_200_OK)
 
 
 class ChangePasswordView(generics.UpdateAPIView):

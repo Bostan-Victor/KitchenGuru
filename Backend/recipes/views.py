@@ -52,6 +52,16 @@ class GetRecipes(generics.ListAPIView):
         if category:
             return models.Recipes.objects.filter(category=category).prefetch_related('images')
         return models.Recipes.objects.all().prefetch_related('images')
+    
+
+class GetRecipe(generics.ListAPIView):
+    serializer_class = serializers.GetRecipeSerializer
+
+    def get_queryset(self):
+        recipe_id = self.request.query_params.get('recipe_id', None)
+        if recipe_id:
+            return models.Recipes.objects.filter(id=recipe_id).prefetch_related('images')
+        raise models.Recipes.DoesNotExist('Recipe id was not provided!')
 
 
 class GetIngredients(generics.ListAPIView):
@@ -103,7 +113,6 @@ class GetFavorites(generics.ListAPIView):
             return Response({'message': 'This user has no favorite recipes'}, status=status.HTTP_404_NOT_FOUND)
         
         return super(GetFavorites, self).list(request)
-        
         
         
 class FilteringView(generics.ListAPIView):
