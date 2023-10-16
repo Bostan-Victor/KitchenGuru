@@ -200,13 +200,20 @@ def send_code_to_api(categories, ingredients):
             ]
         )
         response_message = res["choices"][0]["message"]["content"]
-        recipe_title = response_message.split("\n")[0][7:]
-        recipe_image_url = create_ai_recipe_image(recipe_title)
-        return {"message": response_message, "image_url": recipe_image_url}, status.HTTP_200_OK
+        if response_message[:7] == "Title: ":
+            recipe_title = response_message.split("\n")[0][7:]
+            recipe_image_url = create_ai_recipe_image(recipe_title)
+            return {"message": response_message, "image_url": recipe_image_url}, status.HTTP_200_OK
+        else:
+            return {"message": "Unexpected response format from OpenAI."}, status.HTTP_500_INTERNAL_SERVER_ERROR
     except openai.error.AuthenticationError:
-        return "Invalid API key for OpenAI.", status.HTTP_401_UNAUTHORIZED
-    except KeyError:
-        return "Unexpected response format from OpenAI.", status.HTTP_500_INTERNAL_SERVER_ERROR
+        return {"message": "Invalid API key for OpenAI."}, status.HTTP_401_UNAUTHORIZED
+    except openai.error.RateLimitError:
+        return {"message": "Rate limit reached for requests."}, status.HTTP_429_TOO_MANY_REQUESTS
+    except (KeyError, IndexError):
+        return {"message": "Unexpected response format from OpenAI."}, status.HTTP_500_INTERNAL_SERVER_ERROR
+    except openai.error.ServiceUnavailableError:
+        return {"message": "Issue with the OpenAI API servers."}, status.HTTP_503_SERVICE_UNAVAILABLE
 
 
 def create_ai_recipe_image(recipe_title):
@@ -226,8 +233,5 @@ class AIRecipesView(views.APIView):
         if user_categories and user_ingredients:
             gpt_response, http_status = send_code_to_api(user_categories, user_ingredients)
             return Response(gpt_response, status=http_status)
+        
         return Response({"message": "Invalid input."}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
