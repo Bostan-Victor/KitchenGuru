@@ -81,7 +81,6 @@ class AddFavoritesSerialier(serializers.Serializer):
     recipe_id = serializers.CharField(max_length=255)
 
 
-
 class FilterRecipesSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     title = serializers.CharField(max_length=255)
@@ -98,3 +97,4 @@ class FilterRecipesSerializer(serializers.Serializer):
     def get_images(self, obj):
         images = obj.images.all()
         return GetRecipesImagesSerializer(images, many=True).data
+    

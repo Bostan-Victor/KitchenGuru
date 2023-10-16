@@ -34,8 +34,6 @@ class Favorites(models.Model):
     user = models.ForeignKey(Users, on_delete=models.CASCADE)
     recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
 
-class Watchlist(models.Model):
-    pass
 
 class Review(models.Model):
     recipes = models.ForeignKey(Recipes, on_delete=models.CASCADE, null=True)

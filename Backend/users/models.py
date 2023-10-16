@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 
+
 class Users(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     first_name = None
@@ -32,6 +33,7 @@ class PasswordRecovery(models.Model):
     created_at = models.DateTimeField(null=True)
     is_used = models.BooleanField(default=False)
 
+
 class Tokens(models.Model):
     user = models.OneToOneField(
         Users, 
@@ -40,3 +42,9 @@ class Tokens(models.Model):
     )
     access_token = models.CharField(max_length=255, null=True)
     refresh_token = models.CharField(max_length=255, null=True)
+
+
+class WatchList(models.Model):
+    user = models.ForeignKey(Users, on_delete=models.CASCADE)
+    recipe = models.ForeignKey('recipes.Recipes', on_delete=models.CASCADE)
+    viewed_at = models.DateTimeField(auto_now_add=True)
