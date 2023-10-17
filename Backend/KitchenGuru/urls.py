@@ -28,4 +28,7 @@ urlpatterns = [
         path("recipes/", include("recipes.urls")),
         path("best100/", include("filtering_test.urls")),
     ]))
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] 
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

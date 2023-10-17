@@ -7,17 +7,28 @@ from users import serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.utils import timezone
+from users import models
+from users import serializers
 import recipes
 
 
 class ProfileView(generics.RetrieveAPIView):
-    serializer_class = serializers.ProfileSerializer
+    serializer_class = serializers.UserSerializer
     permission_classes = [IsAuthenticated]
     
     def get_object(self):
-        data = self.request.data
-        user = models.Users.objects.get(username = data['username'])
-        return user
+        user_id = self.request.user.id
+        user = models.Users.objects.get(id=user_id)
+        profile = models.Profiles.objects.get(user=user)
+        user_created_recipes = recipes.models.Recipes.objects.filter(created_by_id=user_id)
+        user_data = {
+            'username': user.username,
+            'profile': {
+                'avatar': profile.avatar
+            },
+            'recipes': user_created_recipes
+        }
+        return user_data
 
 
 class AddWatchListView(generics.CreateAPIView):

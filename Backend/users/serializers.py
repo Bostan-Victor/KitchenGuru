@@ -3,11 +3,24 @@ from rest_framework import serializers
 from users import models
 
 
+class GetUserRecipes(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField(max_length=255)
+    images = serializers.SerializerMethodField()
+
+    def get_images(self, obj):
+        images = obj.images.all()
+        return GetRecipesImagesSerializer(images, many=True).data
+
+
 class ProfileSerializer(serializers.Serializer):
+    avatar = serializers.ImageField()
+
+
+class UserSerializer(serializers.Serializer):
     username = serializers.CharField(max_length = 32)
-    email = serializers.EmailField()
-    password = serializers.CharField(max_length = 32)
-    avatar = serializers.ImageField(default="static/avatars/no_picture.png")
+    profile = ProfileSerializer(read_only=True)
+    recipes = GetUserRecipes(many=True, read_only=True)
 
 
 class AddAvatarSerializer(serializers.Serializer):

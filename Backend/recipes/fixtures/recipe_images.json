@@ -1517,12 +1517,5 @@
             "image": "recipes/no_recipe.jpg",
             "recipe_id": 217
         }
-    },
-    {
-        "model": "recipes.RecipesImages",
-        "fields": {
-            "image": "recipes/no_recipe.jpg",
-            "recipe_id": 218
-        }
     }
 ]

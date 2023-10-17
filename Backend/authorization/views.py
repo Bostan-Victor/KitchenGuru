@@ -67,7 +67,7 @@ class RefreshTokenView(generics.UpdateAPIView):
         try:
             user_tokens = models.Tokens.objects.get(user_id=user_id)
         except:
-            return Response({'message': 'The provided access token is invalid!'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': 'The provided access token is invalid!'}, status=status.HTTP_401_UNAUTHORIZED)
         refresh_token = RefreshToken(user_tokens.refresh_token)
         new_access_token = str(refresh_token.access_token)
         user_tokens.access_token = new_access_token
