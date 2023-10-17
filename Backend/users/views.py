@@ -19,8 +19,14 @@ class ProfileView(generics.RetrieveAPIView):
     
     def get_object(self):
         user_id = self.request.user.id
-        user = models.Users.objects.get(id=user_id)
-        profile = models.Profiles.objects.get(user=user)
+        try:
+            user = models.Users.objects.get(id=user_id)
+        except models.Users.DoesNotExist:
+            return Response({'message': f'User with user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            profile = models.Profiles.objects.get(user=user)
+        except models.Profiles.DoesNotExist:
+            return Response({'message': f'Profile for user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
         user_created_recipes = recipes.models.Recipes.objects.filter(created_by_id=user_id)
         user_data = {
             'username': user.username,
