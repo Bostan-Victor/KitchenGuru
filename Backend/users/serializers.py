@@ -23,8 +23,8 @@ class UserSerializer(serializers.Serializer):
     recipes = GetUserRecipes(many=True, read_only=True)
 
 
-class AddAvatarSerializer(serializers.Serializer):
-    avatar = serializers.ImageField(default="static/avatars/no_picture.png")
+class UpdateAvatarSerializer(serializers.Serializer):
+    avatar = serializers.ImageField()
 
 
 class AddWatchListSerializer(serializers.Serializer):

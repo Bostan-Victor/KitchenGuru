@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from django.utils import timezone
 from users import models
 from users import serializers
+from datetime import datetime
 import recipes
 
 
@@ -29,6 +30,26 @@ class ProfileView(generics.RetrieveAPIView):
             'recipes': user_created_recipes
         }
         return user_data
+    
+
+class UpdateAvatarView(generics.UpdateAPIView):
+    serializer_class = serializers.UpdateAvatarSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request):
+        user_id = request.user.id
+        avatar = request.data['avatar']
+        if not avatar:
+            return Response({'message': 'A new avatar was not provided!'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user_profile = models.Profiles.objects.get(user_id=user_id)
+        except models.Profiles.DoesNotExist:
+            return Response({'message': f'Profile for user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
+
+        user_profile.avatar = avatar
+        user_profile.updated = datetime.now()
+        user_profile.save()
+        return Response({'new_avatar': user_profile.avatar.url}, status=status.HTTP_200_OK)
 
 
 class AddWatchListView(generics.CreateAPIView):
