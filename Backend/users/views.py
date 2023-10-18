@@ -43,14 +43,14 @@ class UpdateAvatarView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     def update(self, request):
-        user_id = request.user.id
+        user = request.user
         avatar = request.data['avatar']
         if not avatar:
             return Response({'message': 'A new avatar was not provided!'}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            user_profile = models.Profiles.objects.get(user_id=user_id)
+            user_profile = models.Profiles.objects.get(user_id=user.id)
         except models.Profiles.DoesNotExist:
-            return Response({'message': f'Profile for user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
+            user_profile = models.Profiles.objects.create(user=user)
 
         user_profile.avatar = avatar
         user_profile.updated = datetime.now()
@@ -92,3 +92,16 @@ class RecentRecipesView(generics.ListAPIView):
         recent_recipes = [entry.recipe for entry in watch_entries]
         return recent_recipes
 
+
+class UpdateUsernameView(generics.UpdateAPIView):
+    serializer_class = serializers.UpdateUsernameSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request):
+        user_id = request.user.id
+        new_username = request.data['username']
+        user = models.Users.objects.get(id=user_id)
+
+        user.username = new_username
+        user.save()
+        return Response({'new_username': user.username}, status=status.HTTP_200_OK)

@@ -48,3 +48,7 @@ class GetRecipesSerializer(serializers.Serializer):
     
 class GetRecipesImagesSerializer(serializers.Serializer):
     image = serializers.ImageField()
+
+
+class UpdateUsernameSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=32)
