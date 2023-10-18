@@ -52,3 +52,7 @@ class GetRecipesImagesSerializer(serializers.Serializer):
 
 class UpdateUsernameSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=32)
+
+
+class UpdateEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()

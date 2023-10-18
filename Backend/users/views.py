@@ -105,3 +105,17 @@ class UpdateUsernameView(generics.UpdateAPIView):
         user.username = new_username
         user.save()
         return Response({'new_username': user.username}, status=status.HTTP_200_OK)
+    
+
+class UpdateEmailView(generics.UpdateAPIView):
+    serializer_class = serializers.UpdateEmailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request):
+        user_id = request.user.id
+        new_email = request.data['email']
+        user = models.Users.objects.get(id=user_id)
+
+        user.email = new_email
+        user.save()
+        return Response({'new_email': user.email}, status=status.HTTP_200_OK)
