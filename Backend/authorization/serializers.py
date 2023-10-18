@@ -57,6 +57,11 @@ class PasswordRecoveryRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
 
+class SendEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    link = serializers.CharField(max_length=255)
+
+
 class PasswordRecoveryChange(serializers.Serializer):
     new_password = serializers.CharField(max_length=32)
     confirm_new_password = serializers.CharField(max_length=32)
