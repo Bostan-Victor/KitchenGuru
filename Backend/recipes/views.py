@@ -43,6 +43,15 @@ class CreateReviewView(generics.CreateAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
+class GetReviewsView(generics.ListAPIView):
+    serializer_class = serializers.ReviewDetailSerializer
+    
+    def get_queryset(self):
+        recipe_title = self.request.query_params.get('title', None)
+        recipe = models.Recipes.objects.get(title=recipe_title)
+        return models.Review.objects.filter(recipes=recipe)
+
+
 class GetRecipes(generics.ListAPIView):
     serializer_class = serializers.GetRecipesSerializer
 

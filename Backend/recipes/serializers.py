@@ -37,6 +37,17 @@ class RecipeReviewSerializer(serializers.Serializer):
     rating = serializers.IntegerField()
 
 
+class UserSerializer(serializers.Serializer):
+    avatar = serializers.ImageField(source='profiles.avatar')
+    username = serializers.CharField(max_length=32)
+
+
+class ReviewDetailSerializer(serializers.Serializer):
+    text = serializers.CharField(max_length=255)
+    rating = serializers.IntegerField()
+    user = UserSerializer()
+
+
 class GetRecipesImagesSerializer(serializers.Serializer):
     image = serializers.ImageField()
 
