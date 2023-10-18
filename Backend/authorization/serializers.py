@@ -34,8 +34,6 @@ class RegisterSerializer(serializers.Serializer):
         return user
     
 
-    
-
 class LoginSerializer(serializers.Serializer):
     username_email = serializers.CharField(max_length=32)
     password = serializers.CharField(max_length=32)

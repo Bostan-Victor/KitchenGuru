@@ -98,27 +98,6 @@ class ChangePasswordView(generics.UpdateAPIView):
             return Response({"message": "Password updated succesfully!"}, status=status.HTTP_200_OK)
         else:
             return Response({"message": "Old password is incorrect!"}, status=status.HTTP_400_BAD_REQUEST)
-        
-# @api_view(['POST'])
-# def password_recovery_request_view(request):
-#     data = request.data
-#     try:
-#         user = models.Users.objects.get(email=data['email'])
-#     except models.Users.DoesNotExist:
-#         return Response({'message': 'There is no account created with this email!'}, status=status.HTTP_404_NOT_FOUND)
-#     pass_recovery_object = models.PasswordRecovery.objects.get(user_id=user.id)
-#     pass_recovery_object.created_at = datetime.now()
-#     pass_recovery_object.is_used = False
-#     pass_recovery_object.save()
-#     link = request.build_absolute_uri(reverse('password-recovery-change') + f'?user_id={user.id}')
-#     send_mail(
-#         'KitchenGuru - Password Recovery',
-#         f'Click this link to change your password:\n{link}',
-#         'KitchenGuru@mail.com',
-#         [data['email']],
-#         fail_silently=False
-#     )
-#     return Response({'message': 'Email sent succesfully!'}, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -130,7 +109,7 @@ def password_recovery_request_view(request):
     try:
         models.Users.objects.get(email=data['email'])
         random_code = str(randint(100000, 999999))
-        return Response({'code': random_code}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'code': random_code}, status=status.HTTP_200_OK)
     except models.Users.DoesNotExist:
         return Response({'message': 'This email is not valid!'}, status=status.HTTP_404_NOT_FOUND)
     

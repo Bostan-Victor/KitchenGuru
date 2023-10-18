@@ -70,7 +70,7 @@ class GetIngredients(generics.ListAPIView):
 
 
 class AddFavorites(generics.CreateAPIView):
-    serializer_class = serializers.AddFavoritesSerialier
+    serializer_class = serializers.FavoritesSerialier
     permission_classes = [IsAuthenticated]
 
     def create(self, request):
@@ -93,6 +93,21 @@ class AddFavorites(generics.CreateAPIView):
                 'user_id': user.id,
                 'recipes_id': recipe_id
             }, status=status.HTTP_201_CREATED)
+        
+
+class DeleteFavoritesView(generics.DestroyAPIView):
+    serializer_class = serializers.FavoritesSerialier
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+        recipe_id = request.data['recipe_id']
+
+        try:
+            models.Favorites.objects.get(user_id=user.id, recipe_id=recipe_id).delete()
+            return Response({'message': f'Recipe deleted from favorites!'}, status=status.HTTP_200_OK)
+        except models.Favorites.DoesNotExist:
+            return Response({'message': 'The recipe is not in this users favorites!'}, status=status.HTTP_404_NOT_FOUND)
         
 
 class GetFavorites(generics.ListAPIView):

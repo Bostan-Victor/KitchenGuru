@@ -91,7 +91,7 @@ class SearchRecipesSerializer(serializers.Serializer):
         return GetRecipesImagesSerializer(images, many=True).data
     
     
-class AddFavoritesSerialier(serializers.Serializer):
+class FavoritesSerialier(serializers.Serializer):
     recipe_id = serializers.CharField(max_length=255)
 
 
