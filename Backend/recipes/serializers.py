@@ -32,11 +32,6 @@ class CreateRecipeSerializer(serializers.Serializer):
         return recipe
 
 
-class RecipeReviewSerializer(serializers.Serializer):
-    text = serializers.CharField(max_length=255)
-    rating = serializers.IntegerField()
-
-
 class UserSerializer(serializers.Serializer):
     avatar = serializers.ImageField(source='profiles.avatar')
     username = serializers.CharField(max_length=32)

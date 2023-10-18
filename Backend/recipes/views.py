@@ -25,30 +25,38 @@ class CreateRecipeView(generics.CreateAPIView):
 
 
 class CreateReviewView(generics.CreateAPIView):
-    serializer_class = serializers.RecipeReviewSerializer
+    serializer_class = serializers.ReviewDetailSerializer
     permission_classes = [IsAuthenticated]
         
     def create(self, request):
         data = request.data
         user = request.user
-        recipe = models.Recipes.objects.get(title=data["title"])
-        data.pop("title")
-        review = models.Review.objects.create(
-            recipes=recipe, 
-            user=user, 
-            rating=data["rating"], 
-            text=data["text"], 
-            review_added=datetime.now())
-        serializer = serializers.RecipeReviewSerializer(review, many=False)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        try:
+            recipe = models.Recipes.objects.get(id=data["id"])
+        except models.Recipes.DoesNotExist:
+            return Response({'message': 'This recipe does not exist!'}, status=status.HTTP_404_NOT_FOUND)
+        
+        review_exists = models.Review.objects.filter(user=user, recipes=recipe).exists()
+            
+        if review_exists:
+            return Response({'message': f'The already submitted a review for this recipe!'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            review = models.Review.objects.create(
+                recipes=recipe, 
+                user=user, 
+                rating=data["rating"], 
+                text=data["text"], 
+                review_added=datetime.now())
+            serializer = self.get_serializer(review, many=False)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 
 class GetReviewsView(generics.ListAPIView):
     serializer_class = serializers.ReviewDetailSerializer
     
     def get_queryset(self):
-        recipe_title = self.request.query_params.get('title', None)
-        recipe = models.Recipes.objects.get(title=recipe_title)
+        recipe_id = self.request.query_params.get('recipe_id', None)
+        recipe = models.Recipes.objects.get(id=recipe_id)
         return models.Review.objects.filter(recipes=recipe)
 
 
@@ -150,7 +158,7 @@ class FilteringView(generics.ListAPIView):
         queryset = queryset.filter(duration__gte=duration_min, duration__lte=duration_max)
         
         if categories:
-            categories_list = categories.split(', ')
+            categories_list = categories.split(',')
             queryset = queryset.filter(category__in=categories_list)
         
         order_by_field = sort_by if sort_by in self.ordering_fields else self.ordering_fields[0]
