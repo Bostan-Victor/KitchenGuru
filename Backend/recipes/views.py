@@ -39,7 +39,7 @@ class CreateReviewView(generics.CreateAPIView):
         review_exists = models.Review.objects.filter(user=user, recipes=recipe).exists()
             
         if review_exists:
-            return Response({'message': f'The already submitted a review for this recipe!'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': f'The user already submitted a review for this recipe!'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             review = models.Review.objects.create(
                 recipes=recipe, 
