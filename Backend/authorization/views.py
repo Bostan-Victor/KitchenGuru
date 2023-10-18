@@ -162,9 +162,9 @@ class PasswordRecoveryChangeView(generics.UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         data = request.data
-        user_id = request.query_params.get('user_id')
-        user = models.Users.objects.get(id=user_id)
-        pass_recovery_object = models.PasswordRecovery.objects.get(user_id=user_id)
+        email = request.query_params.get('email')
+        user = models.Users.objects.get(email=email)
+        pass_recovery_object = models.PasswordRecovery.objects.get(user_id=user.id)
         created_at = pass_recovery_object.created_at
         now = timezone.now()
         delta = timedelta(minutes=15)
