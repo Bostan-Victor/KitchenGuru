@@ -54,13 +54,30 @@ class GetRecipes(generics.ListAPIView):
     
 
 class GetRecipe(generics.ListAPIView):
-    serializer_class = serializers.GetRecipeSerializer
+    serializer_class = serializers.GetRecipesSerializer
 
-    def get_queryset(self):
-        recipe_id = self.request.query_params.get('recipe_id', None)
-        if recipe_id:
-            return models.Recipes.objects.filter(id=recipe_id).prefetch_related('images')
-        raise models.Recipes.DoesNotExist('Recipe id was not provided!')
+    def list(self, request):
+        is_favorite = False
+        user = request.user
+
+        recipe_id = request.query_params.get('recipe_id', None)
+        if not recipe_id:
+           return Response({'message': 'Recipe id was not provided!'}, status=status.HTTP_400_NOT_FOUND)
+        try:
+            recipe = models.Recipes.objects.get(id=recipe_id)
+        except:
+            return Response({'message': 'Recipe with the provided id was not found!'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if user.is_authenticated:
+            if models.Favorites.objects.get(recipe_id=recipe.id, user_id=user.id):
+                is_favorite = True
+
+        serializer = self.get_serializer(recipe)
+        data = {
+            'recipe': serializer.data,
+            'is_favorite': is_favorite
+        }
+        return Response(data)
 
 
 class GetIngredients(generics.ListAPIView):

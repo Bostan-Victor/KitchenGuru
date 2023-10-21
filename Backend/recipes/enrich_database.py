@@ -7,29 +7,38 @@ filename = open(file_path, 'r', encoding='utf-8')
 f = csv.DictReader(filename)
 
 data = []
+data_names = []
 
 # Load recipes
-# for col in f:
-#     dt = {
-#         'model': 'recipes.Recipes',
-#         'fields': {}
-#     }
-#     data_temp = {
-#         'title': '',
-#         'ingredients': '',
-#         'instructions': '',
-#         'category': '',
-#         'duration': '',
-#         'ingredient_tags': ''
-#     }
-#     data_temp['title'] = col['\ufefftitle']
-#     data_temp['ingredients'] = col['Ingredients']
-#     data_temp['instructions'] = col['Instructions']
-#     data_temp['category'] = col['Category'].lower()
-#     data_temp['duration'] = int(col['Duration'])
-#     data_temp['ingredient_tags'] = col['ingredient_tags'].lower()
-#     dt['fields'] = data_temp
-#     data.append(dt)
+for col in f:
+    dt = {
+        'model': 'recipes.Recipes',
+        'fields': {}
+    }
+    data_temp = {
+        'title': '',
+        'ingredients': '',
+        'instructions': '',
+        'category': '',
+        'duration': '',
+        'ingredient_tags': ''
+    }
+    data_names_temp = {
+        'title': ''
+    }
+    data_names_temp['title'] = col['\ufeffTitle']
+    # data_temp['title'] = col['\ufeffTitle']
+    # data_temp['ingredients'] = col['Ingredients']
+    # data_temp['instructions'] = col['Instructions']
+    # data_temp['category'] = col['Category'].lower()
+    # data_temp['duration'] = int(col['Duration'])
+    # data_temp['ingredient_tags'] = col['ingredient_tags'].lower()
+    # dt['fields'] = data_temp
+    data_names.append(data_names_temp)
+    data.append(dt)
+
+with open('fixtures/titles.json', 'w') as f:
+    json.dump(data_names, f)
 
 # # Load ingredients
 # ingredients = []
@@ -48,17 +57,17 @@ data = []
 #     }
 #     data.append(dt)
 
-rec_id = 1
-for col in f:
-    dt = {
-        'model': 'recipes.RecipesImages',
-        'fields': {
-            'image': 'recipes/no_recipe.jpg',
-            'recipe_id': rec_id
-        }
-    }
-    rec_id += 1
-    data.append(dt)
+# rec_id = 1
+# for col in f:
+#     dt = {
+#         'model': 'recipes.RecipesImages',
+#         'fields': {
+#             'image': 'recipes/no_recipe.jpg',
+#             'recipe_id': rec_id
+#         }
+#     }
+#     rec_id += 1
+#     data.append(dt)
 
-with open('fixtures/recipe_images.json', 'w') as f:
-    json.dump(data, f)
+# with open('fixtures/recipe_images.json', 'w') as f:
+#     json.dump(data, f)

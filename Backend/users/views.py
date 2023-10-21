@@ -14,7 +14,7 @@ import recipes
 
 
 class ProfileView(generics.RetrieveAPIView):
-    serializer_class = serializers.UserSerializer
+    serializer_class = serializers.UserProfileSerializer
     permission_classes = [IsAuthenticated]
     
     def get_object(self):
@@ -30,32 +30,13 @@ class ProfileView(generics.RetrieveAPIView):
         user_created_recipes = recipes.models.Recipes.objects.filter(created_by_id=user_id)
         user_data = {
             'username': user.username,
+            'email': user.email,
             'profile': {
                 'avatar': profile.avatar
             },
             'recipes': user_created_recipes
         }
         return user_data
-    
-
-class UpdateAvatarView(generics.UpdateAPIView):
-    serializer_class = serializers.UpdateAvatarSerializer
-    permission_classes = [IsAuthenticated]
-
-    def update(self, request):
-        user = request.user
-        avatar = request.data['avatar']
-        if not avatar:
-            return Response({'message': 'A new avatar was not provided!'}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            user_profile = models.Profiles.objects.get(user_id=user.id)
-        except models.Profiles.DoesNotExist:
-            user_profile = models.Profiles.objects.create(user=user)
-
-        user_profile.avatar = avatar
-        user_profile.updated = datetime.now()
-        user_profile.save()
-        return Response({'new_avatar': user_profile.avatar.url}, status=status.HTTP_200_OK)
 
 
 class AddWatchListView(generics.CreateAPIView):
@@ -91,31 +72,11 @@ class RecentRecipesView(generics.ListAPIView):
         watch_entries = models.WatchList.objects.filter(user=user).order_by('-viewed_at')
         recent_recipes = [entry.recipe for entry in watch_entries]
         return recent_recipes
-
-
-class UpdateUsernameView(generics.UpdateAPIView):
-    serializer_class = serializers.UpdateUsernameSerializer
-    permission_classes = [IsAuthenticated]
-
-    def update(self, request):
-        user_id = request.user.id
-        new_username = request.data['username']
-        user = models.Users.objects.get(id=user_id)
-
-        user.username = new_username
-        user.save()
-        return Response({'new_username': user.username}, status=status.HTTP_200_OK)
     
 
-class UpdateEmailView(generics.UpdateAPIView):
-    serializer_class = serializers.UpdateEmailSerializer
+class UpdateProfileView(generics.UpdateAPIView):
+    serializer_class = serializers.UpdateProfileSerializer
     permission_classes = [IsAuthenticated]
 
-    def update(self, request):
-        user_id = request.user.id
-        new_email = request.data['email']
-        user = models.Users.objects.get(id=user_id)
-
-        user.email = new_email
-        user.save()
-        return Response({'new_email': user.email}, status=status.HTTP_200_OK)
+    def get_object(self):
+        return self.request.user.profiles
