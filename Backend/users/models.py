@@ -19,7 +19,7 @@ class Profiles(models.Model):
     )
     first_name = models.CharField(max_length=32, null=True)
     last_name = models.CharField(max_length=32, null=True)
-    avatar = models.ImageField(upload_to="static/avatars", default="static/avatars/no_picture.png")
+    avatar = models.ImageField(upload_to="avatars", default="static/avatars/no_picture.png")
     last_login = models.DateTimeField(null=True)
     updated = models.DateTimeField(null=True)
 

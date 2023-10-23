@@ -162,5 +162,8 @@ EMAIL_HOST_USER = '842f18f8b476ee'
 EMAIL_HOST_PASSWORD = '658c5c1542a585'
 EMAIL_PORT = '2525'
 
-MEDIA_URL = '/media/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'KitchenGuru/static')]
+
+MEDIA_URL = '/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')

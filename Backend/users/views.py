@@ -7,17 +7,36 @@ from users import serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.utils import timezone
+from users import models
+from users import serializers
+from datetime import datetime
 import recipes
 
 
 class ProfileView(generics.RetrieveAPIView):
-    serializer_class = serializers.ProfileSerializer
+    serializer_class = serializers.UserProfileSerializer
     permission_classes = [IsAuthenticated]
     
     def get_object(self):
-        data = self.request.data
-        user = models.Users.objects.get(username = data['username'])
-        return user
+        user_id = self.request.user.id
+        try:
+            user = models.Users.objects.get(id=user_id)
+        except models.Users.DoesNotExist:
+            return Response({'message': f'User with user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            profile = models.Profiles.objects.get(user=user)
+        except models.Profiles.DoesNotExist:
+            return Response({'message': f'Profile for user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
+        user_created_recipes = recipes.models.Recipes.objects.filter(created_by_id=user_id)
+        user_data = {
+            'username': user.username,
+            'email': user.email,
+            'profile': {
+                'avatar': profile.avatar
+            },
+            'recipes': user_created_recipes
+        }
+        return user_data
 
 
 class AddWatchListView(generics.CreateAPIView):
@@ -54,4 +73,11 @@ class RecentRecipesView(generics.ListAPIView):
         watch_entries = models.WatchList.objects.filter(user=user).order_by('-viewed_at')
         recent_recipes = [entry.recipe for entry in watch_entries]
         return recent_recipes
+    
 
+class UpdateProfileView(generics.UpdateAPIView):
+    serializer_class = serializers.UpdateProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user.profiles

@@ -34,8 +34,6 @@ class RegisterSerializer(serializers.Serializer):
         return user
     
 
-    
-
 class LoginSerializer(serializers.Serializer):
     username_email = serializers.CharField(max_length=32)
     password = serializers.CharField(max_length=32)
@@ -55,6 +53,11 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 class PasswordRecoveryRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+
+class SendEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    link = serializers.CharField(max_length=255)
 
 
 class PasswordRecoveryChange(serializers.Serializer):
