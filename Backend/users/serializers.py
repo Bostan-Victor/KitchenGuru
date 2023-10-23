@@ -15,7 +15,7 @@ class AddAvatarSerializer(serializers.Serializer):
 
 
 class AddWatchListSerializer(serializers.Serializer):
-    recipe_id = serializers.CharField(max_length=255)
+    recipe_id = serializers.IntegerField()
 
 
 class GetRecipesSerializer(serializers.Serializer):
