@@ -1,6 +1,7 @@
 from django.db import models
 from users.models import Users
 
+
 class Recipes(models.Model):
     CATEGORY_CHOICES = (
         ('soups', 'Soups'),
@@ -18,6 +19,13 @@ class Recipes(models.Model):
     duration = models.IntegerField(null=True)
     ingredient_tags = models.CharField(max_length=255, null=True)
     created_by = models.ForeignKey(Users, null=True, on_delete=models.CASCADE)
+
+
+class AIRecipes(models.Model):
+    message = models.TextField()
+    image_url = models.ImageField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(Users, on_delete=models.CASCADE)
 
 
 class Ingredients(models.Model):

@@ -31,6 +31,11 @@ class CreateRecipeSerializer(serializers.Serializer):
         models.RecipesImages.objects.bulk_create(image_instances, len(image_instances))
 
         return recipe
+    
+
+class AIRecipeSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=255)
+    image_url = serializers.CharField(max_length=255)
 
 
 class UserSerializer(serializers.Serializer):

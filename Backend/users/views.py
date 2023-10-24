@@ -9,7 +9,6 @@ from rest_framework.response import Response
 from django.utils import timezone
 from users import models
 from users import serializers
-from datetime import datetime
 import recipes
 
 

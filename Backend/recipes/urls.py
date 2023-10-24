@@ -15,6 +15,7 @@ urlpatterns = [
     path('get-favorites', views.GetFavorites.as_view()),
     path('best100', views.FilteringView.as_view()),
     path('search', views.SearchRecipesView.as_view()),
-    path('ai-recipes', views.AIRecipesView.as_view()),
+    path('generate-ai-recipes', views.AIRecipesView.as_view()),
+    path('create-ai-recipes', views.CreateAIRecipesView.as_view()),
     path('update-review/<int:recipes_id>/', views.UpdateReviewView.as_view())
 ] 

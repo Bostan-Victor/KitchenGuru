@@ -72,82 +72,26 @@ class UpdateReviewView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         recipes_id = self.kwargs.get('recipes_id')
-
         if self.request.user.is_superuser:
-            try:
-                user_id = self.request.data.get("user_id")
-            except:
-                raise exceptions.ValidationError({"message": "This field is required for superusers."})
+            user_id = self.request.data.get("user_id")
+            if not user_id:
+                raise exceptions.ValidationError({"message": "The field 'user_id' is required for superusers."})
 
             reviews = self.queryset.filter(user_id=user_id, recipes_id=recipes_id)
             if not reviews.exists():
                 raise exceptions.ValidationError({"message": "No reviews found for provided user_id and recipes_id."})
             return reviews
 
-        reviews = self.queryset.filter(user_id=self.request.user.id, recipes_id=recipes_id)
-        if not reviews.exists():
-            raise exceptions.ValidationError({"message": "No reviews found for the authenticated user and provided recipes_id."})
-        return reviews
-
+        else:
+            reviews = self.queryset.filter(user_id=self.request.user.id, recipes_id=recipes_id)
+            if not reviews.exists():
+                raise exceptions.ValidationError({"message": "No reviews found for the authenticated user and provided recipes_id."})
+            return reviews
 
     def get_serializer_class(self):
         if self.request.user.is_superuser:
             return serializers.AdminReviewSerializer
         return serializers.UserReviewSerializer
-
-    # def retrieve(self, request, *args, **kwargs):
-    #     if request.user.is_superuser:
-    #         reviews = self.get_queryset()
-    #         serializer = self.get_serializer_class()(reviews, many=True)
-    #         return Response(serializer.data, status=status.HTTP_200_OK)
-    #     return super(UpdateReviewView, self).retrieve(request, *args, **kwargs)
-
-
-
-# class UpdateReviewView(generics.RetrieveUpdateDestroyAPIView):
-#     # 1 method: two serailizers one for users one for admin
-#     # 2 methid: add custom permisions
-#     serializer_class = serializers.ReviewDetailSerializer
-#     permission_classes = [IsAuthenticated]
-
-    # write method get_query()
-    # if request.user.is_superuser():
-    # return modesls.Review.objects.all()
-    # elif not req.user.is_superuser():
-    # return models.Review.objects.filter(userid=request.user.id)
-
-    # def update(self, request):
-    #     data = request.data
-    #     user = request.user
-    #     try:
-    #         recipe = models.Recipes.objects.get(id=data["id"])
-    #     except models.Recipes.DoesNotExist:
-    #         return Response({'message': 'This recipe does not exist!'}, status=status.HTTP_404_NOT_FOUND)
-        
-    #     try:
-    #         review = models.Review.objects.get(user=user, recipes=recipe)
-    #     except models.Review.MultipleObjectsReturned:
-    #         return Response({"message": "Multiple reviews were returned by this user for this recipe!"}, status=status.HTTP_409_CONFLICT)
-    #     except models.Review.DoesNotExist:
-    #         return Response({"message": "This user has not added a review to this recipe!"}, status=status.HTTP_404_NOT_FOUND)
-        
-    #     review.rating = data["rating"]
-    #     review.text = data["text"]
-    #     review.review_added = datetime.now()
-    #     review.save()
-    #     serializer = self.get_serializer(review)
-    #     return Response(serializer.data, status=status.HTTP_200_OK)
-
-    #return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-# class GetReviewsView(generics.ListAPIView):
-#     serializer_class = serializers.ReviewDetailSerializer
-    
-#     def get_queryset(self):
-#         recipe_id = self.request.query_params.get('recipe_id', None)
-#         recipe = models.Recipes.objects.get(id=recipe_id)
-#         return models.Review.objects.filter(recipes=recipe)
 
 
 class GetRecipes(generics.ListAPIView):
@@ -373,3 +317,62 @@ class AIRecipesView(views.APIView):
             return Response(gpt_response, status=http_status)
         
         return Response({"message": "Invalid input."}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class CreateAIRecipesView(generics.ListCreateAPIView):
+    queryset = models.AIRecipes.objects.all()
+    serializer_class = serializers.AIRecipeSerializer
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        user_id = request.user.id
+        queryset = self.queryset.filter(created_by=user_id).order_by('-created_at')
+        if not queryset.exists():
+            return Response({"message": "This user has not created any AI generated recipes"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def create(self, request):
+        data = request.data
+        recipe = self.queryset.create(
+            created_by = request.user,
+            message = data['message'],
+            image_url = data['image_url']    
+        )
+        serializer = self.serializer_class(recipe)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+    
+
+# class CreateReviewView(generics.ListCreateAPIView):
+#     queryset = models.Review.objects.all()
+#     serializer_class = serializers.ReviewDetailSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_queryset(self):
+#         recipe_id = self.request.query_params.get('recipe_id', None)
+#         recipe = models.Recipes.objects.get(id=recipe_id)
+#         return models.Review.objects.filter(recipes=recipe)
+        
+#     def create(self, request):
+#         data = request.data
+#         user = request.user
+#         try:
+#             recipe = models.Recipes.objects.get(id=data["id"])
+#         except models.Recipes.DoesNotExist:
+#             return Response({'message': 'This recipe does not exist!'}, status=status.HTTP_404_NOT_FOUND)
+    
+#         review_exists = models.Review.objects.filter(user=user, recipes=recipe).exists()
+
+#         if review_exists:
+#             return Response({'message': f'The user already submitted a review for this recipe!'}, status=status.HTTP_400_BAD_REQUEST)
+#         else:
+#             review = models.Review.objects.create(
+#                 recipes=recipe, 
+#                 user=user, 
+#                 rating=data["rating"], 
+#                 text=data["text"], 
+#                 review_added=datetime.now())
+#             serializer = self.get_serializer(review, many=False)
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
