@@ -22,6 +22,22 @@ class CreateRecipeView(generics.CreateAPIView):
         if serializer.is_valid(raise_exception=True):
             recipe = serializer.save(created_by=request.user)
             return Response({'message': 'Recipe created!'}, status=status.HTTP_201_CREATED)
+        
+
+class DeleteRecipeView(generics.DestroyAPIView):
+    serializer_class = serializers.RecipeIdSerialier
+    permission_classes = [IsAuthenticated]
+
+    
+    def delete(self, request):
+        user = request.user
+        recipe_id = request.data['recipe_id']
+
+        try:
+            models.Recipes.objects.get(id=recipe_id, created_by_id=user.id).delete()
+            return Response({'message': 'Recipe deleted succesfully!'}, status=status.HTTP_200_OK)
+        except models.Recipes.DoesNotExist:
+            return Response({'message': 'This user did not create this recipe!'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class CreateReviewView(generics.CreateAPIView):
@@ -69,7 +85,7 @@ class GetRecipe(generics.ListAPIView):
             return Response({'message': 'Recipe with the provided id was not found!'}, status=status.HTTP_404_NOT_FOUND)
         
         if user.is_authenticated:
-            if models.Favorites.objects.get(recipe_id=recipe.id, user_id=user.id):
+            if models.Favorites.objects.filter(recipe_id=recipe.id, user_id=user.id).exists():
                 is_favorite = True
 
         serializer = self.get_serializer(recipe)
@@ -87,8 +103,9 @@ class GetIngredients(generics.ListAPIView):
 
 
 class AddFavorites(generics.CreateAPIView):
-    serializer_class = serializers.FavoritesSerialier
+    serializer_class = serializers.RecipeIdSerialier
     permission_classes = [IsAuthenticated]
+
 
     def create(self, request):
         user = request.user
@@ -113,8 +130,9 @@ class AddFavorites(generics.CreateAPIView):
         
 
 class DeleteFavoritesView(generics.DestroyAPIView):
-    serializer_class = serializers.FavoritesSerialier
+    serializer_class = serializers.RecipeIdSerialier
     permission_classes = [IsAuthenticated]
+
 
     def delete(self, request):
         user = request.user
@@ -122,7 +140,7 @@ class DeleteFavoritesView(generics.DestroyAPIView):
 
         try:
             models.Favorites.objects.get(user_id=user.id, recipe_id=recipe_id).delete()
-            return Response({'message': f'Recipe deleted from favorites!'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Recipe deleted from favorites!'}, status=status.HTTP_200_OK)
         except models.Favorites.DoesNotExist:
             return Response({'message': 'The recipe is not in this users favorites!'}, status=status.HTTP_404_NOT_FOUND)
         
@@ -131,12 +149,14 @@ class GetFavorites(generics.ListAPIView):
     serializer_class = serializers.GetRecipesSerializer
     permission_classes = [IsAuthenticated]
 
+
     def get_queryset(self):
         user_id = self.request.user.id
         favorites_entries = models.Favorites.objects.filter(user_id=user_id)
         recipe_ids = favorites_entries.values('recipe_id')
         return models.Recipes.objects.filter(id__in=Subquery(recipe_ids)).prefetch_related('images')
     
+
     def list(self, request):
         queryset = self.get_queryset()
 
@@ -149,6 +169,7 @@ class GetFavorites(generics.ListAPIView):
 class FilteringView(generics.ListAPIView):
     serializer_class = serializers.FilterRecipesSerializer
     ordering_fields = ['favorites_count', 'average_rating', 'review_count']
+
 
     def list(self, request):
         queryset = models.Recipes.objects.annotate(
@@ -192,6 +213,8 @@ class SearchRecipesView(generics.ListAPIView):
     serializer_class = serializers.SearchRecipesSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['category']
+
+    
     def list(self, request):
         queryset = super().filter_queryset(models.Recipes.objects.all())
         try:
