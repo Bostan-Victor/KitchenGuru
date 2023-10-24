@@ -20,12 +20,12 @@ class CreateRecipeSerializer(serializers.Serializer):
     image = CreateRecipesImageSerializer(many=True, write_only=True, required=False)
 
     def create(self, validated_data, *args, **kwargs):
-        image_data = validated_data.pop('image', [])
+        image_data = self.context['request'].FILES.pop('image', None)
         recipe = models.Recipes.objects.create(**validated_data)
         image_instances = []
 
         for image in image_data:
-            image_instances.append(models.RecipesImages(recipe=recipe, **image))
+            image_instances.append(models.RecipesImages(recipe=recipe, image=image))
 
         models.RecipesImages.objects.bulk_create(image_instances, len(image_instances))
 
