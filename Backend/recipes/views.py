@@ -1,4 +1,4 @@
-from rest_framework import generics, status, views
+from rest_framework import generics, status, views, permissions, exceptions
 from recipes import serializers
 from rest_framework.permissions import IsAuthenticated
 from recipes import models
@@ -9,6 +9,7 @@ from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 from KitchenGuru import settings
 import openai
+from django.http import Http404
 
 openai.api_key = settings.CHATGPT_API_KEY
 
@@ -25,7 +26,7 @@ class CreateRecipeView(generics.CreateAPIView):
 
 
 class CreateReviewView(generics.ListCreateAPIView):
-    # queryset = models.Rewiew.objects.all()
+    queryset = models.Review.objects.all()
     serializer_class = serializers.ReviewDetailSerializer
     permission_classes = [IsAuthenticated]
 
@@ -57,38 +58,87 @@ class CreateReviewView(generics.ListCreateAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 
+class IsOwnerOrAdmin(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_superuser:
+            return True
+        return obj.user == request.user
+
+
 class UpdateReviewView(generics.RetrieveUpdateDestroyAPIView):
-    # 1 method: two serailizers one for users one for admin
-    # 2 methid: add custom permisions
-    serializer_class = serializers.ReviewDetailSerializer
+    queryset = models.Review.objects.all()
     permission_classes = [IsAuthenticated]
+    lookup_field = 'recipes_id'
+
+    def get_queryset(self):
+        recipes_id = self.kwargs.get('recipes_id')
+
+        if self.request.user.is_superuser:
+            try:
+                user_id = self.request.data.get("user_id")
+            except:
+                raise exceptions.ValidationError({"message": "This field is required for superusers."})
+
+            reviews = self.queryset.filter(user_id=user_id, recipes_id=recipes_id)
+            if not reviews.exists():
+                raise exceptions.ValidationError({"message": "No reviews found for provided user_id and recipes_id."})
+            return reviews
+
+        reviews = self.queryset.filter(user_id=self.request.user.id, recipes_id=recipes_id)
+        if not reviews.exists():
+            raise exceptions.ValidationError({"message": "No reviews found for the authenticated user and provided recipes_id."})
+        return reviews
+
+
+    def get_serializer_class(self):
+        if self.request.user.is_superuser:
+            return serializers.AdminReviewSerializer
+        return serializers.UserReviewSerializer
+
+    # def retrieve(self, request, *args, **kwargs):
+    #     if request.user.is_superuser:
+    #         reviews = self.get_queryset()
+    #         serializer = self.get_serializer_class()(reviews, many=True)
+    #         return Response(serializer.data, status=status.HTTP_200_OK)
+    #     return super(UpdateReviewView, self).retrieve(request, *args, **kwargs)
+
+
+
+# class UpdateReviewView(generics.RetrieveUpdateDestroyAPIView):
+#     # 1 method: two serailizers one for users one for admin
+#     # 2 methid: add custom permisions
+#     serializer_class = serializers.ReviewDetailSerializer
+#     permission_classes = [IsAuthenticated]
 
     # write method get_query()
     # if request.user.is_superuser():
-    # return modesl.Review.objects.all()
-    # models.Review.objects.filter(userid=request.user.id)
+    # return modesls.Review.objects.all()
+    # elif not req.user.is_superuser():
+    # return models.Review.objects.filter(userid=request.user.id)
 
-    def update(self, request):
-        data = request.data
-        user = request.user
-        try:
-            recipe = models.Recipes.objects.get(id=data["id"])
-        except models.Recipes.DoesNotExist:
-            return Response({'message': 'This recipe does not exist!'}, status=status.HTTP_404_NOT_FOUND)
+    # def update(self, request):
+    #     data = request.data
+    #     user = request.user
+    #     try:
+    #         recipe = models.Recipes.objects.get(id=data["id"])
+    #     except models.Recipes.DoesNotExist:
+    #         return Response({'message': 'This recipe does not exist!'}, status=status.HTTP_404_NOT_FOUND)
         
-        try:
-            review = models.Review.objects.get(user=user, recipes=recipe)
-        except models.Review.MultipleObjectsReturned:
-            return Response({"message": "Multiple reviews were returned by this user for this recipe!"}, status=status.HTTP_409_CONFLICT)
-        except models.Review.DoesNotExist:
-            return Response({"message": "This user has not added a review to this recipe!"}, status=status.HTTP_404_NOT_FOUND)
+    #     try:
+    #         review = models.Review.objects.get(user=user, recipes=recipe)
+    #     except models.Review.MultipleObjectsReturned:
+    #         return Response({"message": "Multiple reviews were returned by this user for this recipe!"}, status=status.HTTP_409_CONFLICT)
+    #     except models.Review.DoesNotExist:
+    #         return Response({"message": "This user has not added a review to this recipe!"}, status=status.HTTP_404_NOT_FOUND)
         
-        review.rating = data["rating"]
-        review.text = data["text"]
-        review.review_added = datetime.now()
-        review.save()
-        serializer = self.get_serializer(review)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    #     review.rating = data["rating"]
+    #     review.text = data["text"]
+    #     review.review_added = datetime.now()
+    #     review.save()
+    #     serializer = self.get_serializer(review)
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
+
+    #return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 # class GetReviewsView(generics.ListAPIView):
@@ -242,7 +292,6 @@ class FilteringView(generics.ListAPIView):
         page = self.paginate_queryset(queryset)
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
-
 
 
 class SearchRecipesView(generics.ListAPIView):

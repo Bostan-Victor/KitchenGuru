@@ -63,7 +63,6 @@ class AddWatchListView(generics.CreateAPIView):
         return Response({'message': 'Recipe added to watch list!'}, status=status.HTTP_201_CREATED)
 
 
-
 class RecentRecipesView(generics.ListAPIView):
     serializer_class = serializers.GetRecipesSerializer
     permission_classes = [IsAuthenticated]

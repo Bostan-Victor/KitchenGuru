@@ -1,7 +1,6 @@
 from django.db import models
 from users.models import Users
 
-
 class Recipes(models.Model):
     CATEGORY_CHOICES = (
         ('soups', 'Soups'),
@@ -40,5 +39,4 @@ class Review(models.Model):
     user = models.ForeignKey(Users, verbose_name="User", on_delete=models.CASCADE)
     rating = models.IntegerField(null=True)
     text = models.TextField(max_length=255)
-    review_added = models.DateTimeField(null=True)
-    
+    review_date = models.DateTimeField(null=True)

@@ -19,6 +19,7 @@ from django.urls import reverse
 from django.contrib.auth import logout
 from random import randint
 
+
 class RegisterView(generics.CreateAPIView):
     serializer_class = serializers.RegisterSerializer
 
