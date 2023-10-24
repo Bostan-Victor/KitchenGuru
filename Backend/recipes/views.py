@@ -254,14 +254,16 @@ class SearchRecipesView(generics.ListAPIView):
 
         for recipe in queryset:
             recipe_ingredients = recipe.ingredient_tags.split(', ')
-            matching_ingredients = set(user_ingredients).intersection(recipe_ingredients)
+            matching_ingredients = set(recipe_ingredients).intersection(set(user_ingredients))
+            missing_ingredients = set(recipe_ingredients).difference(set(user_ingredients))
             if len(matching_ingredients) > 0:
                 matched_recipes.append({
                 'recipe': recipe,
-                'matching_ingredients': ', '.join(ingredient for ingredient in matching_ingredients).strip()
+                'matching_ingredients': ', '.join(ingredient for ingredient in matching_ingredients).strip(),
+                'missing_ingredients': ', '.join(ingredient for ingredient in missing_ingredients).strip()
                 })
         if matched_recipes:
-            sorted_recipes = sorted(matched_recipes, key=lambda x: len(x['matching_ingredients']), reverse=True)
+            sorted_recipes = sorted(matched_recipes, key=lambda x: len(x['missing_ingredients']))
         else:
             return Response({"message": "No recipes have the ingredients provided"}, status=status.HTTP_404_NOT_FOUND)
 

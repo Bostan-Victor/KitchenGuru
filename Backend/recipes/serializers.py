@@ -153,6 +153,7 @@ class SearchRecipesSerializer(serializers.Serializer):
     ingredient_tags = serializers.CharField(source='recipe.ingredient_tags', max_length=255)
     images = serializers.SerializerMethodField()
     matching_ingredients = serializers.CharField(max_length=255)
+    missing_ingredients = serializers.CharField(max_length=255)
 
     def get_images(self, obj):
         images = obj['recipe'].images.all()
