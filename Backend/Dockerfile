@@ -2,20 +2,18 @@ FROM python:3.10
 
 ENV PYTHONDONTWRITEBYTECODE 1
 
-RUN mkdir /code
+RUN mkdir /ktbackend
 
-WORKDIR /code
+WORKDIR /ktbackend
 
-COPY . /code
-
-ADD .env /code/.env
+COPY . /ktbackend
 
 ENV APP_NAME=KITCHENGURU
 
+RUN pip install -r /ktbackend/requirements.txt
 
-RUN pip install -r /code/requirements.txt
+RUN chmod +x /ktbackend/conf/entrypoint.sh
 
-RUN chmod +x /code/conf/entrypoint.sh
-# CMD ["/code/conf/entrypoint.sh"]
-CMD gunicorn KitchenGuru.wsgi:application -b 0.0.0.0:8000
+CMD /ktbackend/conf/entrypoint.sh
 
+# CMD ["gunicorn", "KitchenGuru.wsgi:application", "-b", "0.0.0.0:8000"]
