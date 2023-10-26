@@ -18,6 +18,11 @@ from django.utils import timezone
 from django.urls import reverse
 from django.contrib.auth import logout
 from random import randint
+import logging
+
+
+USER_LOGGER = logging.getLogger(name='user_activity')
+
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = serializers.RegisterSerializer
@@ -29,16 +34,17 @@ def login_view(request):
     try:
         user = models.Users.objects.get(username=data['username_email'])
     except models.Users.DoesNotExist:
+        USER_LOGGER.warning("Username invalid!")
         try:
             user = models.Users.objects.get(email=data['username_email'])
         except:
+            USER_LOGGER.warning("Email invalid!")
             return Response({"message": "Username or Email invalid!"}, status=status.HTTP_404_NOT_FOUND)
     try:
         profile = models.Profiles.objects.get(user_id=user.id)
         profile.last_login = datetime.now()
         profile.save()
     except models.Profiles.DoesNotExist:
-
         return Response({"message": "Profile does not exist!"}, status=status.HTTP_404_NOT_FOUND)
     # token, created = models.Tokens.objects.get_or_create()
     if check_password(data['password'], user.password):
@@ -54,6 +60,7 @@ def login_view(request):
                              "access_token": access_token,
                              "refresh_token": str(refresh)}, status=status.HTTP_200_OK)
         else:
+            USER_LOGGER.info(f"User:{user.username}, User Agent: {request.META.get('HTTP_USER_AGENT')} logged in from remote address {request.META.get('REMOTE_ADDR')}")
             return Response({"message": "User logged in!",
                     "access_token": access_token,
                     "refresh_token": str(refresh) }, status=status.HTTP_200_OK)

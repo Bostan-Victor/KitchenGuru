@@ -167,3 +167,37 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'KitchenGuru/static')]
 
 MEDIA_URL = '/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{'
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{'
+        }
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+        'file': {
+            'level': 'INFO', 
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'verbose'
+        }
+    },
+    'loggers': {
+        'user_activity': {
+            'handlers': ['file'],
+            'level' : 'INFO'
+        }
+    }
+}
