@@ -10,6 +10,15 @@ from django.utils import timezone
 from users import models
 from users import serializers
 import recipes
+import logging
+import logging.config
+import os
+
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'user_activity.conf')
+logging.config.fileConfig(config_path, disable_existing_loggers=False)
+USER_LOGGER = logging.getLogger('user')
 
 
 class ProfileView(generics.RetrieveAPIView):
@@ -21,10 +30,12 @@ class ProfileView(generics.RetrieveAPIView):
         try:
             user = models.Users.objects.get(id=user_id)
         except models.Users.DoesNotExist:
+            USER_LOGGER.error(f"User with user_id={user_id} tried to access profile but wasn't found.")
             return Response({'message': f'User with user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
         try:
             profile = models.Profiles.objects.get(user=user)
         except models.Profiles.DoesNotExist:
+            USER_LOGGER.error(f"User with user_id={user_id} tried to access profile but their profile wasn't found.")
             return Response({'message': f'Profile for user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
         user_created_recipes = recipes.models.Recipes.objects.filter(created_by_id=user_id)
         user_data = {
@@ -35,6 +46,7 @@ class ProfileView(generics.RetrieveAPIView):
             },
             'recipes': user_created_recipes
         }
+        USER_LOGGER.info(f"User with user_id={user_id} accessed their profile.")
         return user_data
 
 
@@ -47,18 +59,22 @@ class AddWatchListView(generics.CreateAPIView):
         recipe_id = request.query_params.get('recipe_id')
 
         if recipe_id is None:
+            USER_LOGGER.error(f"User with user_id={user.id} tried to add recipe to watch list without providing recipe_id.")
             return Response({'message': 'The recipe_id query parameter is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             recipe = recipes.models.Recipes.objects.get(id=recipe_id)
         except recipes.models.Recipes.DoesNotExist:
+            USER_LOGGER.warning(f"User with user_id={user.id} tried to add non-existent recipe with id={recipe_id} to watch list.")
             return Response({'message': 'This recipe does not exist!'}, status=status.HTTP_404_NOT_FOUND)
 
         recipe, created = models.WatchList.objects.get_or_create(user=user, recipe=recipe)
         if not created:
             recipe.viewed_at = timezone.now()
             recipe.save()
+            USER_LOGGER.info(f"User with user_id={user.id} viewed the recipe with id={recipe_id} again. View time updated.")
             return Response({"message": "Recipe viewed at time updated!"}, status=status.HTTP_200_OK)
+        USER_LOGGER.info(f"User with user_id={user.id} added the recipe with id={recipe_id} to their watch list.")
         return Response({'message': 'Recipe added to watch list!'}, status=status.HTTP_201_CREATED)
 
 

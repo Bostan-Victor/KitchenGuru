@@ -19,10 +19,14 @@ from django.urls import reverse
 from django.contrib.auth import logout
 from random import randint
 import logging
+import logging.config
+import os
 
 
-USER_LOGGER = logging.getLogger(name='user_activity')
-
+current_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'user_activity.conf')
+logging.config.fileConfig(config_path, disable_existing_loggers=False)
+USER_LOGGER = logging.getLogger('user')
 
 
 class RegisterView(generics.CreateAPIView):
@@ -35,11 +39,10 @@ def login_view(request):
     try:
         user = models.Users.objects.get(username=data['username_email'])
     except models.Users.DoesNotExist:
-        USER_LOGGER.warning("Username invalid!")
         try:
             user = models.Users.objects.get(email=data['username_email'])
         except:
-            USER_LOGGER.warning("Email invalid!")
+            USER_LOGGER.warning(f"User Agent {request.META.get('HTTP_USER_AGENT')} failed to log in with username/email {data['username_email']} from remote address {request.META.get('REMOTE_ADDR')}")
             return Response({"message": "Username or Email invalid!"}, status=status.HTTP_404_NOT_FOUND)
     try:
         profile = models.Profiles.objects.get(user_id=user.id)
@@ -61,10 +64,12 @@ def login_view(request):
                              "access_token": access_token,
                              "refresh_token": str(refresh)}, status=status.HTTP_200_OK)
         else:
-            USER_LOGGER.info(f"User:{user.username}, User Agent: {request.META.get('HTTP_USER_AGENT')} logged in from remote address {request.META.get('REMOTE_ADDR')}")
+            USER_LOGGER.info(f"User {user.username}, User Agent {request.META.get('HTTP_USER_AGENT')} successfully logged in from remote address {request.META.get('REMOTE_ADDR')}")
             return Response({"message": "User logged in!",
                     "access_token": access_token,
                     "refresh_token": str(refresh) }, status=status.HTTP_200_OK)
+    else:
+        USER_LOGGER.warning(f"User Agent {request.META.get('HTTP_USER_AGENT')} failed to log in with incorrect password from remote address {request.META.get('REMOTE_ADDR')}")
     return Response({"message": "Password invalid!"}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -75,6 +80,7 @@ class RefreshTokenView(generics.UpdateAPIView):
         user_id = request.user.id
         try:
             user_tokens = models.Tokens.objects.get(user_id=user_id)
+            USER_LOGGER.info(f"User '{request.user.username}', User Agent {request.META.get('HTTP_USER_AGENT')} refreshed token from remote address {request.META.get('REMOTE_ADDR')}")
         except:
             return Response({'message': 'The provided access token is invalid!'}, status=status.HTTP_401_UNAUTHORIZED)
         refresh_token = RefreshToken(user_tokens.refresh_token)
@@ -100,6 +106,7 @@ class ChangePasswordView(generics.UpdateAPIView):
             new_password = data['new_password']
             user.set_password(new_password)
             user.save()
+            USER_LOGGER.info(f"User '{user.username}' changed password, User Agent {request.META.get('HTTP_USER_AGENT')} from remote address {request.META.get('REMOTE_ADDR')}")
             profile = models.Profiles.objects.get(user_id=user.id)
             profile.updated = datetime.now()
             profile.save()
@@ -117,6 +124,7 @@ def password_recovery_request_view(request):
     try:
         models.Users.objects.get(email=data['email'])
         random_code = str(randint(100000, 999999))
+        USER_LOGGER.info(f"Password recovery requested for email '{data['email']}', User Agent {request.META.get('HTTP_USER_AGENT')} from remote address {request.META.get('REMOTE_ADDR')}")
         return Response({'code': random_code}, status=status.HTTP_200_OK)
     except models.Users.DoesNotExist:
         return Response({'message': 'This email is not valid!'}, status=status.HTTP_404_NOT_FOUND)
@@ -135,6 +143,7 @@ def send_email_view(request):
         [data['email']],
         fail_silently=False
     )
+    USER_LOGGER.info(f"Password recovery email sent to '{data['email']}', User Agent {request.META.get('HTTP_USER_AGENT')} from remote address {request.META.get('REMOTE_ADDR')}")
 
     user = models.Users.objects.get(email=data['email'])
     pass_recovery_object = models.PasswordRecovery.objects.get(user_id=user.id)
@@ -169,6 +178,7 @@ class PasswordRecoveryChangeView(generics.UpdateAPIView):
                 new_password = data['new_password']
                 user.set_password(new_password)
                 user.save()
+                USER_LOGGER.info(f"User '{user.username}' changed password through recovery link, User Agent {request.META.get('HTTP_USER_AGENT')} from remote address {request.META.get('REMOTE_ADDR')}")
                 profile = models.Profiles.objects.get(user_id=user.id)
                 profile.updated = datetime.now()
                 profile.save()
@@ -191,5 +201,6 @@ class Logout_View(generics.UpdateAPIView):
         token.access_token = None
         token.refresh_token = None
         token.save()
+        USER_LOGGER.info(f"User '{request.user.username}' logged out, User Agent {request.META.get('HTTP_USER_AGENT')} from remote address {request.META.get('REMOTE_ADDR')}")
         return Response({"message": "User logged out succesfully!"})
         

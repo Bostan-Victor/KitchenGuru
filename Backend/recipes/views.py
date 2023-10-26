@@ -10,19 +10,33 @@ from django_filters.rest_framework import DjangoFilterBackend
 from KitchenGuru import settings
 import openai
 from django.http import Http404
+import os
+import logging
+import logging.config
+
 
 openai.api_key = settings.CHATGPT_API_KEY
+current_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'user_activity.conf')
+logging.config.fileConfig(config_path, disable_existing_loggers=False)
+USER_LOGGER = logging.getLogger('user')
+
 
 class CreateRecipeView(generics.CreateAPIView):
     serializer_class = serializers.CreateRecipeSerializer
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
+        USER_LOGGER.info(f'User {request.user} is attempting to create a recipe with data: {request.data} from remote address {request.META.get("REMOTE_ADDR")}')
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid(raise_exception=True):
             recipe = serializer.save(created_by=request.user)
+            USER_LOGGER.info(f'User {request.user} successfully created a recipe with id: {recipe.id}')
             return Response({'message': 'Recipe created!'}, status=status.HTTP_201_CREATED)
+        else:
+            USER_LOGGER.warning(f'User {request.user} submitted invalid data: {serializer.errors}')
+            return Response({'message': 'Error creating the recipe!'}, status=status.HTTP_400_BAD_REQUEST)
         
 
 class DeleteRecipeView(generics.DestroyAPIView):
@@ -33,11 +47,14 @@ class DeleteRecipeView(generics.DestroyAPIView):
     def delete(self, request):
         user = request.user
         recipe_id = request.data['recipe_id']
+        USER_LOGGER.info(f'User {request.user} is attempting to delete a recipe with id: {recipe_id} from remote address {request.META.get("REMOTE_ADDR")}')
 
         try:
             models.Recipes.objects.get(id=recipe_id, created_by_id=user.id).delete()
+            USER_LOGGER.info(f'User {request.user} successfully deleted the recipe with id: {recipe_id}')
             return Response({'message': 'Recipe deleted succesfully!'}, status=status.HTTP_200_OK)
         except models.Recipes.DoesNotExist:
+            USER_LOGGER.warning(f'User {request.user} failed to delete recipe with id: {recipe_id} - Not owned by this user')
             return Response({'message': 'This user did not create this recipe!'}, status=status.HTTP_404_NOT_FOUND)
 
 
@@ -54,6 +71,7 @@ class CreateReviewView(generics.ListCreateAPIView):
     def create(self, request):
         data = request.data
         user = request.user
+        USER_LOGGER.info(f'User {request.user} is attempting to create a review for recipe: {request.data.get("id")} from remote address {request.META.get("REMOTE_ADDR")}')
         try:
             recipe = models.Recipes.objects.get(id=data["id"])
         except models.Recipes.DoesNotExist:
@@ -62,6 +80,7 @@ class CreateReviewView(generics.ListCreateAPIView):
         review_exists = models.Review.objects.filter(user=user, recipes=recipe).exists()
 
         if review_exists:
+            USER_LOGGER.warning(f'User {request.user} tried to create another review for recipe: {request.data.get("id")}')
             return Response({'message': f'The user already submitted a review for this recipe!'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             review = models.Review.objects.create(
@@ -71,14 +90,8 @@ class CreateReviewView(generics.ListCreateAPIView):
                 text=data["text"], 
                 review_added=datetime.now())
             serializer = self.get_serializer(review, many=False)
+            USER_LOGGER.info(f'User {request.user} successfully created a review for recipe: {request.data.get("id")}')
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
-
-class IsOwnerOrAdmin(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        if request.user.is_superuser:
-            return True
-        return obj.user == request.user
 
 
 class UpdateReviewView(generics.RetrieveUpdateDestroyAPIView):
@@ -91,16 +104,19 @@ class UpdateReviewView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.user.is_superuser:
             user_id = self.request.data.get("user_id")
             if not user_id:
+                USER_LOGGER.warning(f"Superuser {self.request.user.username} tried to update a review without providing a 'user_id'.")
                 raise exceptions.ValidationError({"message": "The field 'user_id' is required for superusers."})
 
             reviews = self.queryset.filter(user_id=user_id, recipes_id=recipes_id)
             if not reviews.exists():
+                USER_LOGGER.info(f"Superuser {self.request.user.username} tried to fetch a non-existent review for user_id: {user_id} and recipes_id: {recipes_id}.")
                 raise exceptions.ValidationError({"message": "No reviews found for provided user_id and recipes_id."})
             return reviews
 
         else:
             reviews = self.queryset.filter(user_id=self.request.user.id, recipes_id=recipes_id)
             if not reviews.exists():
+                USER_LOGGER.info(f"User {self.request.user.username} tried to fetch a non-existent review for recipes_id: {recipes_id}.")
                 raise exceptions.ValidationError({"message": "No reviews found for the authenticated user and provided recipes_id."})
             return reviews
 
@@ -129,10 +145,12 @@ class GetRecipe(generics.ListAPIView):
 
         recipe_id = request.query_params.get('recipe_id', None)
         if not recipe_id:
+           USER_LOGGER.warning(f"{user.username if user.is_authenticated else 'Anonymous user'} attempted to retrieve a recipe without providing a recipe_id.")
            return Response({'message': 'Recipe id was not provided!'}, status=status.HTTP_400_NOT_FOUND)
         try:
             recipe = models.Recipes.objects.get(id=recipe_id)
         except:
+            USER_LOGGER.warning(f"{user.username if user.is_authenticated else 'Anonymous user'} attempted to retrieve non-existent recipe with id: {recipe_id}.")
             return Response({'message': 'Recipe with the provided id was not found!'}, status=status.HTTP_404_NOT_FOUND)
         
         if user.is_authenticated:
@@ -144,6 +162,7 @@ class GetRecipe(generics.ListAPIView):
             'recipe': serializer.data,
             'is_favorite': is_favorite
         }
+        USER_LOGGER.info(f"{user.username if user.is_authenticated else 'Anonymous user'} retrieved recipe with id: {recipe_id}. Favorite status: {is_favorite}")
         return Response(data)
 
 
@@ -164,15 +183,17 @@ class AddFavorites(generics.CreateAPIView):
         try:
             recipe = models.Recipes.objects.get(id=recipe_id)
         except models.Recipes.DoesNotExist:
+            USER_LOGGER.warning(f"User {user.username} tried to add non-existent recipe with id: {recipe_id} to favorites.")
             return Response({'message': 'This recipe does not exist!'}, status=status.HTTP_404_NOT_FOUND)
 
         favorites_exists = models.Favorites.objects.filter(user=user, recipe=recipe).exists()
 
         if favorites_exists:
+            USER_LOGGER.info(f"User {user.username} attempted to add recipe with id: {recipe_id} to favorites, but it's already in favorites.")
             return Response({'message': f'This recipe was already added to favorites for user_id={user.id}!'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             favorites_object = models.Favorites.objects.create(user=user, recipe=recipe)
-
+            USER_LOGGER.info(f"User {user.username} added recipe with id: {recipe_id} to favorites.")
             return Response({
                 'message': 'The recipe was added to favorites!',
                 'user_id': user.id,
@@ -191,8 +212,10 @@ class DeleteFavoritesView(generics.DestroyAPIView):
 
         try:
             models.Favorites.objects.get(user_id=user.id, recipe_id=recipe_id).delete()
+            USER_LOGGER.info(f"User {user.username} deleted recipe with id: {recipe_id} from favorites.")
             return Response({'message': 'Recipe deleted from favorites!'}, status=status.HTTP_200_OK)
         except models.Favorites.DoesNotExist:
+            USER_LOGGER.info(f"User {user.username} failed to delete recipe with id: {recipe_id} from favorites, due to it not being there originally.")
             return Response({'message': 'The recipe is not in this users favorites!'}, status=status.HTTP_404_NOT_FOUND)
         
 
@@ -353,8 +376,10 @@ class CreateAIRecipesView(generics.ListCreateAPIView):
         user_id = request.user.id
         queryset = self.queryset.filter(created_by=user_id).order_by('-created_at')
         if not queryset.exists():
+            USER_LOGGER.info(f"User {request.user.username} tried to list AI generated recipes, but hasn't created any.")
             return Response({"message": "This user has not created any AI generated recipes"}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(queryset, many=True)
+        USER_LOGGER.info(f"User {request.user.username} listed their AI generated recipes.")
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def create(self, request):
@@ -365,39 +390,6 @@ class CreateAIRecipesView(generics.ListCreateAPIView):
             image_url = data['image_url']    
         )
         serializer = self.serializer_class(recipe)
+        USER_LOGGER.info(f"User {request.user.username} created a new AI generated recipe with id: {recipe.id}.")
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-            
-    
-
-# class CreateReviewView(generics.ListCreateAPIView):
-#     queryset = models.Review.objects.all()
-#     serializer_class = serializers.ReviewDetailSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     def get_queryset(self):
-#         recipe_id = self.request.query_params.get('recipe_id', None)
-#         recipe = models.Recipes.objects.get(id=recipe_id)
-#         return models.Review.objects.filter(recipes=recipe)
-        
-#     def create(self, request):
-#         data = request.data
-#         user = request.user
-#         try:
-#             recipe = models.Recipes.objects.get(id=data["id"])
-#         except models.Recipes.DoesNotExist:
-#             return Response({'message': 'This recipe does not exist!'}, status=status.HTTP_404_NOT_FOUND)
-    
-#         review_exists = models.Review.objects.filter(user=user, recipes=recipe).exists()
-
-#         if review_exists:
-#             return Response({'message': f'The user already submitted a review for this recipe!'}, status=status.HTTP_400_BAD_REQUEST)
-#         else:
-#             review = models.Review.objects.create(
-#                 recipes=recipe, 
-#                 user=user, 
-#                 rating=data["rating"], 
-#                 text=data["text"], 
-#                 review_added=datetime.now())
-#             serializer = self.get_serializer(review, many=False)
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
     

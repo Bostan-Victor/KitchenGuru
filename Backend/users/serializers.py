@@ -2,6 +2,16 @@ from unittest.util import _MAX_LENGTH
 from rest_framework import serializers
 from users import models
 from django.conf import settings
+import recipes
+import logging
+import logging.config
+import os
+
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'user_activity.conf')
+logging.config.fileConfig(config_path, disable_existing_loggers=False)
+USER_LOGGER = logging.getLogger('user')
     
 
 class GetRecipesSerializer(serializers.Serializer):
@@ -58,6 +68,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
         instance.user.save()
         instance.save()
 
+        USER_LOGGER.info(f"User with user_id={instance.user.id} updated their profile.")
         return self.to_representation(instance)
     
     def to_representation(self, instance):
