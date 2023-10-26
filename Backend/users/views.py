@@ -9,7 +9,6 @@ from rest_framework.response import Response
 from django.utils import timezone
 from users import models
 from users import serializers
-from datetime import datetime
 import recipes
 
 
@@ -59,8 +58,8 @@ class AddWatchListView(generics.CreateAPIView):
         if not created:
             recipe.viewed_at = timezone.now()
             recipe.save()
+            return Response({"message": "Recipe viewed at time updated!"}, status=status.HTTP_200_OK)
         return Response({'message': 'Recipe added to watch list!'}, status=status.HTTP_201_CREATED)
-
 
 
 class RecentRecipesView(generics.ListAPIView):

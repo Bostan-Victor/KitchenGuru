@@ -24,6 +24,7 @@ import logging
 USER_LOGGER = logging.getLogger(name='user_activity')
 
 
+
 class RegisterView(generics.CreateAPIView):
     serializer_class = serializers.RegisterSerializer
 

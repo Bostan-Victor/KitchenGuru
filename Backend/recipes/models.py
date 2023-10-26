@@ -21,6 +21,13 @@ class Recipes(models.Model):
     created_by = models.ForeignKey(Users, null=True, on_delete=models.CASCADE)
 
 
+class AIRecipes(models.Model):
+    message = models.TextField()
+    image_url = models.ImageField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(Users, on_delete=models.CASCADE)
+
+
 class Ingredients(models.Model):
     name = models.CharField(max_length=255)
 
@@ -40,5 +47,4 @@ class Review(models.Model):
     user = models.ForeignKey(Users, verbose_name="User", on_delete=models.CASCADE)
     rating = models.IntegerField(null=True)
     text = models.TextField(max_length=255)
-    review_added = models.DateTimeField(null=True)
-    
+    review_date = models.DateTimeField(null=True)

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from recipes import models
+from datetime import datetime
 
 
 class CreateRecipesImageSerializer(serializers.Serializer):
@@ -30,11 +31,92 @@ class CreateRecipeSerializer(serializers.Serializer):
         models.RecipesImages.objects.bulk_create(image_instances, len(image_instances))
 
         return recipe
+    
+
+class AIRecipeSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=255)
+    image_url = serializers.CharField(max_length=255)
 
 
-class RecipeReviewSerializer(serializers.Serializer):
+class UserSerializer(serializers.Serializer):
+    avatar = serializers.ImageField(source='profiles.avatar')
+    username = serializers.CharField(max_length=32)
+
+
+class ReviewDetailSerializer(serializers.Serializer):
     text = serializers.CharField(max_length=255)
     rating = serializers.IntegerField()
+    user = UserSerializer()
+
+    def to_representation(self, instance):
+        data = {}
+        data['text'] = instance.text
+        data['rating'] = instance.rating
+        data['username'] = instance.user.username
+        data['avatar'] = instance.user.profiles.avatar.url
+        return data
+
+
+class AdminReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Review
+        fields = '__all__'
+        depth = 1
+
+    def validate_rating(self, value):
+        if not 1 <= value <= 5:
+            raise serializers.ValidationError("Rating should be between 1 and 5.")
+        return value
+
+    def update(self, instance, validated_data):
+        instance.rating = validated_data.get('rating', instance.rating)
+        instance.text = validated_data.get('text', instance.text)
+        instance.review_date = validated_data.get('review_added', datetime.now())
+        instance.save()
+        return instance
+
+    def delete(self, instance):
+        instance.delete()
+
+    def to_representation(self, instance):
+        data = {}
+        data['review_id'] = instance.id
+        data['text'] = instance.text
+        data['rating'] = instance.rating
+        data['recipe_id'] = instance.recipes.id
+        data['user_id'] = instance.user.id
+        data['username'] = instance.user.username
+        data['avatar'] = instance.user.profiles.avatar.url
+        return data
+
+
+class UserReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Review
+        fields = ['rating', 'text']
+
+    def validate_rating(self, value):
+        if not 1 <= value <= 5:
+            raise serializers.ValidationError("Rating should be between 1 and 5.")
+        return value
+
+    def update(self, instance, validated_data):
+        instance.rating = validated_data.get('rating', instance.rating)
+        instance.text = validated_data.get('text', instance.text)
+        instance.review_date = datetime.now()
+        instance.save()
+        return instance
+
+    def delete(self, instance):
+        instance.delete()
+
+    def to_representation(self, instance):
+        data = {}
+        data['text'] = instance.text
+        data['rating'] = instance.rating
+        data['username'] = instance.user.username
+        data['avatar'] = instance.user.profiles.avatar.url
+        return data
 
 
 class GetRecipesImagesSerializer(serializers.Serializer):
@@ -71,6 +153,7 @@ class SearchRecipesSerializer(serializers.Serializer):
     ingredient_tags = serializers.CharField(source='recipe.ingredient_tags', max_length=255)
     images = serializers.SerializerMethodField()
     matching_ingredients = serializers.CharField(max_length=255)
+    missing_ingredients = serializers.CharField(max_length=255)
 
     def get_images(self, obj):
         images = obj['recipe'].images.all()
