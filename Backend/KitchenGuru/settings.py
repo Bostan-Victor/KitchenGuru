@@ -10,24 +10,31 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
+import environ
 from pathlib import Path
 from datetime import timedelta
-import os
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+env = environ.Env()
+environ.Env.read_env(env_file=os.path.join(BASE_DIR, '.env'))
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_d!rhe@yh%3=il3qs_ffa05zu9(vn%yn=1=gdoyw+^bdf_(1r^'
+# SECRET_KEY = 'django-insecure-_d!rhe@yh%3=il3qs_ffa05zu9(vn%yn=1=gdoyw+^bdf_(1r^'
+SECRET_KEY = env.str('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG = env.bool('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -43,10 +50,10 @@ INSTALLED_APPS = [
     "users.apps.UsersConfig",
     "authorization.apps.AuthorizationConfig",
     "rest_framework.authtoken",
+    "django_filters",
     "gallery",
     "recipes.apps.RecipesConfig",
     "corsheaders",
-    "django_filters"
 ]
 
 MIDDLEWARE = [
@@ -62,7 +69,7 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-CHATGPT_API_KEY = os.environ.get('API_KEY')
+CHATGPT_API_KEY = env.str('API_KEY')
 
 ROOT_URLCONF = 'KitchenGuru.urls'
 
@@ -88,12 +95,23 @@ WSGI_APPLICATION = 'KitchenGuru.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASES = {    
+   "default": {        
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env('DB_NAME'),
+        "USER": env('DB_USERNAME'),
+        "PASSWORD": env('DB_PASSWORD'),
+        "HOST": "backend-postgres-1",
+        "PORT": 5432,
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 # Password validation
@@ -166,3 +184,5 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'KitchenGuru/static')]
 
 MEDIA_URL = '/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+
+
