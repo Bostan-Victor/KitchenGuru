@@ -2,6 +2,12 @@ from rest_framework import serializers, status
 from users import models
 from django.contrib.auth.hashers import make_password
 from rest_framework.response import Response
+import logging
+import logging.config
+
+logging.config.fileConfig(r'C:\Users\PС\Desktop\KG\KitchenGuru\Backend\KitchenGuru\system_activity.conf', disable_existing_loggers=False)
+
+SYSTEM_LOGGER = logging.getLogger('activity')
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -14,8 +20,10 @@ class RegisterSerializer(serializers.Serializer):
         username_exist = models.Users.objects.filter(username=attr['username']).exists()
         email_exist = models.Users.objects.filter(email=attr['email']).exists()
         if username_exist:
+            SYSTEM_LOGGER.warning(f"Registration attempt with existing username: {attr['username']}")
             raise serializers.ValidationError("Username is already in use")
         if email_exist:
+            SYSTEM_LOGGER.warning(f"Registration attempt with existing email: {attr['email']}")
             raise serializers.ValidationError("Email is already in use")
         if len(attr['password']) < 8:
             raise serializers.ValidationError("Password is shorter than 8 characters!")
@@ -30,7 +38,8 @@ class RegisterSerializer(serializers.Serializer):
         profile = models.Profiles.objects.create(user=user)
         rec_code = models.PasswordRecovery.objects.create(user=user)
         token_object = models.Tokens.objects.create(user=user)
-        
+
+        SYSTEM_LOGGER.info(f"New user registered with username: {validated_data['username']}")
         return user
     
 

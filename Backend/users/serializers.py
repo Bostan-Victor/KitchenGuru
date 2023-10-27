@@ -2,6 +2,12 @@ from unittest.util import _MAX_LENGTH
 from rest_framework import serializers
 from users import models
 from django.conf import settings
+import logging
+import logging.config
+
+logging.config.fileConfig(r'C:\Users\PС\Desktop\KG\KitchenGuru\Backend\KitchenGuru\system_activity.conf', disable_existing_loggers=False)
+
+SYSTEM_LOGGER = logging.getLogger('activity')
     
 
 class GetRecipesSerializer(serializers.Serializer):
@@ -57,6 +63,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
         instance.avatar = self.initial_data.get('avatar', instance.avatar)
         instance.user.save()
         instance.save()
+        SYSTEM_LOGGER.info(f'Profile was updated for user with user id {self.request.user.id}.')
 
         return self.to_representation(instance)
     

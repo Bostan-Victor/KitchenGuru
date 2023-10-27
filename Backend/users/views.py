@@ -10,6 +10,12 @@ from django.utils import timezone
 from users import models
 from users import serializers
 import recipes
+import logging
+import logging.config
+
+logging.config.fileConfig(r'C:\Users\PС\Desktop\KG\KitchenGuru\Backend\KitchenGuru\system_activity.conf', disable_existing_loggers=False)
+
+SYSTEM_LOGGER = logging.getLogger('activity')
 
 
 class ProfileView(generics.RetrieveAPIView):
@@ -21,10 +27,12 @@ class ProfileView(generics.RetrieveAPIView):
         try:
             user = models.Users.objects.get(id=user_id)
         except models.Users.DoesNotExist:
+            SYSTEM_LOGGER.warning(f'User with user_id={user_id} was not found!')
             return Response({'message': f'User with user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
         try:
             profile = models.Profiles.objects.get(user=user)
         except models.Profiles.DoesNotExist:
+            SYSTEM_LOGGER.warning(f'Profile for user_id={user_id} was not found!')
             return Response({'message': f'Profile for user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
         user_created_recipes = recipes.models.Recipes.objects.filter(created_by_id=user_id)
         user_data = {
@@ -58,7 +66,9 @@ class AddWatchListView(generics.CreateAPIView):
         if not created:
             recipe.viewed_at = timezone.now()
             recipe.save()
+            SYSTEM_LOGGER.info(f'The viewed at time of the recipe with id {recipe_id} was updated to the watchlist of user with id {user.id}')
             return Response({"message": "Recipe viewed at time updated!"}, status=status.HTTP_200_OK)
+        SYSTEM_LOGGER.info(f'Recipe with id {recipe_id} was added to the watchlist of user with id {user.id}')
         return Response({'message': 'Recipe added to watch list!'}, status=status.HTTP_201_CREATED)
 
 

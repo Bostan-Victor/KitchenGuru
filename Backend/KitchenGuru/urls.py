@@ -26,7 +26,6 @@ urlpatterns = [
         path("users/", include("users.urls")),
         path("admin/", include("superuser.urls")),
         path("recipes/", include("recipes.urls")),
-        path("best100/", include("filtering_test.urls")),
     ]))
 ] 
 

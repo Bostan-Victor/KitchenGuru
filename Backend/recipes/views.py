@@ -10,6 +10,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from KitchenGuru import settings
 import openai
 from django.http import Http404
+import logging
+import logging.config
+
+logging.config.fileConfig(r'C:\Users\PС\Desktop\KG\KitchenGuru\Backend\KitchenGuru\system_activity.conf', disable_existing_loggers=False)
+
+SYSTEM_LOGGER = logging.getLogger('activity')
 
 openai.api_key = settings.CHATGPT_API_KEY
 
@@ -22,6 +28,7 @@ class CreateRecipeView(generics.CreateAPIView):
 
         if serializer.is_valid(raise_exception=True):
             recipe = serializer.save(created_by=request.user)
+            SYSTEM_LOGGER.info(f"Recipe with id {recipe.id} was created by the user with the id {request.user.id}")
             return Response({'message': 'Recipe created!'}, status=status.HTTP_201_CREATED)
 
 
@@ -46,6 +53,7 @@ class CreateReviewView(generics.ListCreateAPIView):
         review_exists = models.Review.objects.filter(user=user, recipes=recipe).exists()
 
         if review_exists:
+            SYSTEM_LOGGER.warning(f"User {request.user.id} attempted to submit multiple reviews for recipe {data['id']}")
             return Response({'message': f'The user already submitted a review for this recipe!'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             review = models.Review.objects.create(
@@ -55,15 +63,10 @@ class CreateReviewView(generics.ListCreateAPIView):
                 text=data["text"], 
                 review_added=datetime.now())
             serializer = self.get_serializer(review, many=False)
+            SYSTEM_LOGGER.info(f"Review created successfully for recipe {data['id']} by user {request.user.id}")
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
     
-
-class IsOwnerOrAdmin(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        if request.user.is_superuser:
-            return True
-        return obj.user == request.user
-
 
 class UpdateReviewView(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Review.objects.all()
@@ -85,6 +88,7 @@ class UpdateReviewView(generics.RetrieveUpdateDestroyAPIView):
         else:
             reviews = self.queryset.filter(user_id=self.request.user.id, recipes_id=recipes_id)
             if not reviews.exists():
+                SYSTEM_LOGGER.warning(f"User {self.request.user.id} tried accessing a non-existing review for recipe {recipes_id}")
                 raise exceptions.ValidationError({"message": "No reviews found for the authenticated user and provided recipes_id."})
             return reviews
 
@@ -117,6 +121,7 @@ class GetRecipe(generics.ListAPIView):
         try:
             recipe = models.Recipes.objects.get(id=recipe_id)
         except:
+            SYSTEM_LOGGER.error(f"Attempted to access non-existent recipe with id {recipe_id}")
             return Response({'message': 'Recipe with the provided id was not found!'}, status=status.HTTP_404_NOT_FOUND)
         
         if user.is_authenticated:
@@ -152,10 +157,11 @@ class AddFavorites(generics.CreateAPIView):
         favorites_exists = models.Favorites.objects.filter(user=user, recipe=recipe).exists()
 
         if favorites_exists:
+            SYSTEM_LOGGER.warning(f"User {user.id} attempted to add already favorited recipe {recipe_id}")
             return Response({'message': f'This recipe was already added to favorites for user_id={user.id}!'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             favorites_object = models.Favorites.objects.create(user=user, recipe=recipe)
-
+            SYSTEM_LOGGER.info(f"User {user.id} added recipe with id {recipe.id} to his list of favorites.")
             return Response({
                 'message': 'The recipe was added to favorites!',
                 'user_id': user.id,
@@ -173,8 +179,10 @@ class DeleteFavoritesView(generics.DestroyAPIView):
 
         try:
             models.Favorites.objects.get(user_id=user.id, recipe_id=recipe_id).delete()
+            SYSTEM_LOGGER.info(f"User {user.id} deleted the recipe with id {recipe_id} from his list of favorites.")
             return Response({'message': f'Recipe deleted from favorites!'}, status=status.HTTP_200_OK)
         except models.Favorites.DoesNotExist:
+            SYSTEM_LOGGER.warning(f"User {user.id} tried deleting a non-favorited recipe with id {recipe_id}")
             return Response({'message': 'The recipe is not in this users favorites!'}, status=status.HTTP_404_NOT_FOUND)
         
 
@@ -216,6 +224,7 @@ class FilteringView(generics.ListAPIView):
             duration_min = int(self.request.query_params.get('duration_min', 0))
             duration_max = int(self.request.query_params.get('duration_max', db_max_duration))
         except ValueError:
+            SYSTEM_LOGGER.error(f"Invalid duration provided by user {self.request.user.id}")
             return Response({"message": "Duration should be a valid number."}, status=status.HTTP_400_BAD_REQUEST)
         
         if not (0 <= duration_min <= duration_max <= db_max_duration):
@@ -248,6 +257,7 @@ class SearchRecipesView(generics.ListAPIView):
             user_ingredients = request.query_params.get('ingredients').split(', ')
             user_ingredients = [ingredient.strip() for ingredient in user_ingredients if ingredient != '']
         except AttributeError:
+            SYSTEM_LOGGER.error(f"User {self.request.user.id} provided malformed URL")
             return Response({"message": "Invalid URL format"}, status=status.HTTP_400_BAD_REQUEST)
 
         matched_recipes = []
@@ -291,12 +301,16 @@ def send_code_to_api(categories, ingredients):
         else:
             return {"message": "Unexpected response format from OpenAI."}, status.HTTP_500_INTERNAL_SERVER_ERROR
     except openai.error.AuthenticationError:
+        SYSTEM_LOGGER.error("Invalid API key for OpenAI")
         return {"message": "Invalid API key for OpenAI."}, status.HTTP_401_UNAUTHORIZED
     except openai.error.RateLimitError:
+        SYSTEM_LOGGER.warning("Rate limit reached for requests to OpenAI")
         return {"message": "Rate limit reached for requests."}, status.HTTP_429_TOO_MANY_REQUESTS
     except (KeyError, IndexError):
+        SYSTEM_LOGGER.warning("Unexpected response format from OpenAI")
         return {"message": "Unexpected response format from OpenAI."}, status.HTTP_500_INTERNAL_SERVER_ERROR
     except openai.error.ServiceUnavailableError:
+        SYSTEM_LOGGER.error("Issue with the OpenAI API servers")
         return {"message": "Issue with the OpenAI API servers."}, status.HTTP_503_SERVICE_UNAVAILABLE
 
 
@@ -330,6 +344,7 @@ class CreateAIRecipesView(generics.ListCreateAPIView):
         user_id = request.user.id
         queryset = self.queryset.filter(created_by=user_id).order_by('-created_at')
         if not queryset.exists():
+            SYSTEM_LOGGER.warning(f"User {self.request.user.id} tried to access his AI created recipes, but has none")
             return Response({"message": "This user has not created any AI generated recipes"}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -342,39 +357,6 @@ class CreateAIRecipesView(generics.ListCreateAPIView):
             image_url = data['image_url']    
         )
         serializer = self.serializer_class(recipe)
+        SYSTEM_LOGGER.info(f"User {self.request.user.id} created an AI recipe")
         return Response(serializer.data, status=status.HTTP_201_CREATED)
             
-    
-
-# class CreateReviewView(generics.ListCreateAPIView):
-#     queryset = models.Review.objects.all()
-#     serializer_class = serializers.ReviewDetailSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     def get_queryset(self):
-#         recipe_id = self.request.query_params.get('recipe_id', None)
-#         recipe = models.Recipes.objects.get(id=recipe_id)
-#         return models.Review.objects.filter(recipes=recipe)
-        
-#     def create(self, request):
-#         data = request.data
-#         user = request.user
-#         try:
-#             recipe = models.Recipes.objects.get(id=data["id"])
-#         except models.Recipes.DoesNotExist:
-#             return Response({'message': 'This recipe does not exist!'}, status=status.HTTP_404_NOT_FOUND)
-    
-#         review_exists = models.Review.objects.filter(user=user, recipes=recipe).exists()
-
-#         if review_exists:
-#             return Response({'message': f'The user already submitted a review for this recipe!'}, status=status.HTTP_400_BAD_REQUEST)
-#         else:
-#             review = models.Review.objects.create(
-#                 recipes=recipe, 
-#                 user=user, 
-#                 rating=data["rating"], 
-#                 text=data["text"], 
-#                 review_added=datetime.now())
-#             serializer = self.get_serializer(review, many=False)
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
