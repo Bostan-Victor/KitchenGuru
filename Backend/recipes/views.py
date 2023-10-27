@@ -20,6 +20,9 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'user_activity.conf')
 logging.config.fileConfig(config_path, disable_existing_loggers=False)
 USER_LOGGER = logging.getLogger('user')
+config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'system_activity.conf')
+logging.config.fileConfig(config_path, disable_existing_loggers=False)
+SYSTEM_LOGGER = logging.getLogger('activity')
 
 
 class CreateRecipeView(generics.CreateAPIView):
@@ -33,6 +36,7 @@ class CreateRecipeView(generics.CreateAPIView):
         if serializer.is_valid(raise_exception=True):
             recipe = serializer.save(created_by=request.user)
             USER_LOGGER.info(f'User {request.user} successfully created a recipe with id: {recipe.id}')
+            SYSTEM_LOGGER.info(f"Recipe with id {recipe.id} was created by the user with the id {request.user.id}")
             return Response({'message': 'Recipe created!'}, status=status.HTTP_201_CREATED)
         else:
             USER_LOGGER.warning(f'User {request.user} submitted invalid data: {serializer.errors}')
@@ -81,6 +85,7 @@ class CreateReviewView(generics.ListCreateAPIView):
 
         if review_exists:
             USER_LOGGER.warning(f'User {request.user} tried to create another review for recipe: {request.data.get("id")}')
+            SYSTEM_LOGGER.warning(f"User {request.user.id} attempted to submit multiple reviews for recipe {data['id']}")
             return Response({'message': f'The user already submitted a review for this recipe!'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             review = models.Review.objects.create(
@@ -91,8 +96,9 @@ class CreateReviewView(generics.ListCreateAPIView):
                 review_added=datetime.now())
             serializer = self.get_serializer(review, many=False)
             USER_LOGGER.info(f'User {request.user} successfully created a review for recipe: {request.data.get("id")}')
+            SYSTEM_LOGGER.info(f"Review created successfully for recipe {data['id']} by user {request.user.id}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+    
 
 class UpdateReviewView(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Review.objects.all()
@@ -117,6 +123,7 @@ class UpdateReviewView(generics.RetrieveUpdateDestroyAPIView):
             reviews = self.queryset.filter(user_id=self.request.user.id, recipes_id=recipes_id)
             if not reviews.exists():
                 USER_LOGGER.info(f"User {self.request.user.username} tried to fetch a non-existent review for recipes_id: {recipes_id}.")
+                SYSTEM_LOGGER.warning(f"User {self.request.user.id} tried accessing a non-existing review for recipe {recipes_id}")
                 raise exceptions.ValidationError({"message": "No reviews found for the authenticated user and provided recipes_id."})
             return reviews
 
@@ -151,6 +158,7 @@ class GetRecipe(generics.ListAPIView):
             recipe = models.Recipes.objects.get(id=recipe_id)
         except:
             USER_LOGGER.warning(f"{user.username if user.is_authenticated else 'Anonymous user'} attempted to retrieve non-existent recipe with id: {recipe_id}.")
+            SYSTEM_LOGGER.error(f"Attempted to access non-existent recipe with id {recipe_id}")
             return Response({'message': 'Recipe with the provided id was not found!'}, status=status.HTTP_404_NOT_FOUND)
         
         if user.is_authenticated:
@@ -190,10 +198,13 @@ class AddFavorites(generics.CreateAPIView):
 
         if favorites_exists:
             USER_LOGGER.info(f"User {user.username} attempted to add recipe with id: {recipe_id} to favorites, but it's already in favorites.")
+            SYSTEM_LOGGER.warning(f"User {user.id} attempted to add already favorited recipe {recipe_id}")
             return Response({'message': f'This recipe was already added to favorites for user_id={user.id}!'}, status=status.HTTP_400_BAD_REQUEST)
+
         else:
             favorites_object = models.Favorites.objects.create(user=user, recipe=recipe)
             USER_LOGGER.info(f"User {user.username} added recipe with id: {recipe_id} to favorites.")
+            SYSTEM_LOGGER.info(f"User {user.id} added recipe with id {recipe.id} to his list of favorites.")
             return Response({
                 'message': 'The recipe was added to favorites!',
                 'user_id': user.id,
@@ -213,9 +224,11 @@ class DeleteFavoritesView(generics.DestroyAPIView):
         try:
             models.Favorites.objects.get(user_id=user.id, recipe_id=recipe_id).delete()
             USER_LOGGER.info(f"User {user.username} deleted recipe with id: {recipe_id} from favorites.")
+            SYSTEM_LOGGER.info(f"User {user.id} deleted the recipe with id {recipe_id} from his list of favorites.")
             return Response({'message': 'Recipe deleted from favorites!'}, status=status.HTTP_200_OK)
         except models.Favorites.DoesNotExist:
             USER_LOGGER.info(f"User {user.username} failed to delete recipe with id: {recipe_id} from favorites, due to it not being there originally.")
+            SYSTEM_LOGGER.warning(f"User {user.id} tried deleting a non-favorited recipe with id {recipe_id}")
             return Response({'message': 'The recipe is not in this users favorites!'}, status=status.HTTP_404_NOT_FOUND)
         
 
@@ -260,6 +273,7 @@ class FilteringView(generics.ListAPIView):
             duration_min = int(self.request.query_params.get('duration_min', 0))
             duration_max = int(self.request.query_params.get('duration_max', db_max_duration))
         except ValueError:
+            SYSTEM_LOGGER.error(f"Invalid duration provided by user {self.request.user.id}")
             return Response({"message": "Duration should be a valid number."}, status=status.HTTP_400_BAD_REQUEST)
         
         if not (0 <= duration_min <= duration_max <= db_max_duration):
@@ -294,6 +308,7 @@ class SearchRecipesView(generics.ListAPIView):
             user_ingredients = request.query_params.get('ingredients').split(', ')
             user_ingredients = [ingredient.strip() for ingredient in user_ingredients if ingredient != '']
         except AttributeError:
+            SYSTEM_LOGGER.error(f"User {self.request.user.id} provided malformed URL")
             return Response({"message": "Invalid URL format"}, status=status.HTTP_400_BAD_REQUEST)
 
         matched_recipes = []
@@ -337,12 +352,16 @@ def send_code_to_api(categories, ingredients):
         else:
             return {"message": "Unexpected response format from OpenAI."}, status.HTTP_500_INTERNAL_SERVER_ERROR
     except openai.error.AuthenticationError:
+        SYSTEM_LOGGER.error("Invalid API key for OpenAI")
         return {"message": "Invalid API key for OpenAI."}, status.HTTP_401_UNAUTHORIZED
     except openai.error.RateLimitError:
+        SYSTEM_LOGGER.warning("Rate limit reached for requests to OpenAI")
         return {"message": "Rate limit reached for requests."}, status.HTTP_429_TOO_MANY_REQUESTS
     except (KeyError, IndexError):
+        SYSTEM_LOGGER.warning("Unexpected response format from OpenAI")
         return {"message": "Unexpected response format from OpenAI."}, status.HTTP_500_INTERNAL_SERVER_ERROR
     except openai.error.ServiceUnavailableError:
+        SYSTEM_LOGGER.error("Issue with the OpenAI API servers")
         return {"message": "Issue with the OpenAI API servers."}, status.HTTP_503_SERVICE_UNAVAILABLE
 
 
@@ -377,6 +396,7 @@ class CreateAIRecipesView(generics.ListCreateAPIView):
         queryset = self.queryset.filter(created_by=user_id).order_by('-created_at')
         if not queryset.exists():
             USER_LOGGER.info(f"User {request.user.username} tried to list AI generated recipes, but hasn't created any.")
+            SYSTEM_LOGGER.warning(f"User {self.request.user.id} tried to access his AI created recipes, but has none")
             return Response({"message": "This user has not created any AI generated recipes"}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(queryset, many=True)
         USER_LOGGER.info(f"User {request.user.username} listed their AI generated recipes.")
@@ -391,5 +411,5 @@ class CreateAIRecipesView(generics.ListCreateAPIView):
         )
         serializer = self.serializer_class(recipe)
         USER_LOGGER.info(f"User {request.user.username} created a new AI generated recipe with id: {recipe.id}.")
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+        SYSTEM_LOGGER.info(f"User {self.request.user.id} created an AI recipe")
+        return Response(serializer.data, status=status.HTTP_201_CREATED)  

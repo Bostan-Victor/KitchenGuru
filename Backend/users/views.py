@@ -19,6 +19,9 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'user_activity.conf')
 logging.config.fileConfig(config_path, disable_existing_loggers=False)
 USER_LOGGER = logging.getLogger('user')
+config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'system_activity.conf')
+logging.config.fileConfig(config_path, disable_existing_loggers=False)
+SYSTEM_LOGGER = logging.getLogger('activity')
 
 
 class ProfileView(generics.RetrieveAPIView):
@@ -31,11 +34,13 @@ class ProfileView(generics.RetrieveAPIView):
             user = models.Users.objects.get(id=user_id)
         except models.Users.DoesNotExist:
             USER_LOGGER.error(f"User with user_id={user_id} tried to access profile but wasn't found.")
+            SYSTEM_LOGGER.warning(f'User with user_id={user_id} was not found!')
             return Response({'message': f'User with user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
         try:
             profile = models.Profiles.objects.get(user=user)
         except models.Profiles.DoesNotExist:
             USER_LOGGER.error(f"User with user_id={user_id} tried to access profile but their profile wasn't found.")
+            SYSTEM_LOGGER.warning(f'Profile for user_id={user_id} was not found!')
             return Response({'message': f'Profile for user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
         user_created_recipes = recipes.models.Recipes.objects.filter(created_by_id=user_id)
         user_data = {
@@ -73,8 +78,10 @@ class AddWatchListView(generics.CreateAPIView):
             recipe.viewed_at = timezone.now()
             recipe.save()
             USER_LOGGER.info(f"User with user_id={user.id} viewed the recipe with id={recipe_id} again. View time updated.")
+            SYSTEM_LOGGER.info(f'The viewed at time of the recipe with id {recipe_id} was updated to the watchlist of user with id {user.id}')
             return Response({"message": "Recipe viewed at time updated!"}, status=status.HTTP_200_OK)
         USER_LOGGER.info(f"User with user_id={user.id} added the recipe with id={recipe_id} to their watch list.")
+        SYSTEM_LOGGER.info(f'Recipe with id {recipe_id} was added to the watchlist of user with id {user.id}')
         return Response({'message': 'Recipe added to watch list!'}, status=status.HTTP_201_CREATED)
 
 

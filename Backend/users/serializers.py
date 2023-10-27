@@ -12,6 +12,9 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'user_activity.conf')
 logging.config.fileConfig(config_path, disable_existing_loggers=False)
 USER_LOGGER = logging.getLogger('user')
+config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'system_activity.conf')
+logging.config.fileConfig(config_path, disable_existing_loggers=False)
+SYSTEM_LOGGER = logging.getLogger('activity')
     
 
 class GetRecipesSerializer(serializers.Serializer):
@@ -67,7 +70,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
         instance.avatar = self.initial_data.get('avatar', instance.avatar)
         instance.user.save()
         instance.save()
-
+        SYSTEM_LOGGER.info(f'Profile was updated for user with user id {instance.user.id}.')
         USER_LOGGER.info(f"User with user_id={instance.user.id} updated their profile.")
         return self.to_representation(instance)
     

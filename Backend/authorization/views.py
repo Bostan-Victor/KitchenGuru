@@ -27,6 +27,9 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'user_activity.conf')
 logging.config.fileConfig(config_path, disable_existing_loggers=False)
 USER_LOGGER = logging.getLogger('user')
+config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'system_activity.conf')
+logging.config.fileConfig(config_path, disable_existing_loggers=False)
+SYSTEM_LOGGER = logging.getLogger('activity')
 
 
 class RegisterView(generics.CreateAPIView):
@@ -43,12 +46,14 @@ def login_view(request):
             user = models.Users.objects.get(email=data['username_email'])
         except:
             USER_LOGGER.warning(f"User Agent {request.META.get('HTTP_USER_AGENT')} failed to log in with username/email {data['username_email']} from remote address {request.META.get('REMOTE_ADDR')}")
+            SYSTEM_LOGGER.warning(f"Failed login attempt with username or email: {data['username_email']}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
             return Response({"message": "Username or Email invalid!"}, status=status.HTTP_404_NOT_FOUND)
     try:
         profile = models.Profiles.objects.get(user_id=user.id)
         profile.last_login = datetime.now()
         profile.save()
     except models.Profiles.DoesNotExist:
+        SYSTEM_LOGGER.warning(f"User with username or email: {data['username_email']} has no profile created, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
         return Response({"message": "Profile does not exist!"}, status=status.HTTP_404_NOT_FOUND)
     # token, created = models.Tokens.objects.get_or_create()
     if check_password(data['password'], user.password):
@@ -82,6 +87,7 @@ class RefreshTokenView(generics.UpdateAPIView):
             user_tokens = models.Tokens.objects.get(user_id=user_id)
             USER_LOGGER.info(f"User '{request.user.username}', User Agent {request.META.get('HTTP_USER_AGENT')} refreshed token from remote address {request.META.get('REMOTE_ADDR')}")
         except:
+            SYSTEM_LOGGER.error(f"Failed to get tokens for user ID: {user_id}")
             return Response({'message': 'The provided access token is invalid!'}, status=status.HTTP_401_UNAUTHORIZED)
         refresh_token = RefreshToken(user_tokens.refresh_token)
         new_access_token = str(refresh_token.access_token)
@@ -110,8 +116,10 @@ class ChangePasswordView(generics.UpdateAPIView):
             profile = models.Profiles.objects.get(user_id=user.id)
             profile.updated = datetime.now()
             profile.save()
+            SYSTEM_LOGGER.info(f"User {user.id} changed password successfully.")
             return Response({"message": "Password updated succesfully!"}, status=status.HTTP_200_OK)
         else:
+            SYSTEM_LOGGER.warning(f"User {user.id} failed to change password due to incorrect old password.")
             return Response({"message": "Old password is incorrect!"}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -127,6 +135,7 @@ def password_recovery_request_view(request):
         USER_LOGGER.info(f"Password recovery requested for email '{data['email']}', User Agent {request.META.get('HTTP_USER_AGENT')} from remote address {request.META.get('REMOTE_ADDR')}")
         return Response({'code': random_code}, status=status.HTTP_200_OK)
     except models.Users.DoesNotExist:
+        SYSTEM_LOGGER.warning(f"Password recovery request for invalid email: {data['email']}")
         return Response({'message': 'This email is not valid!'}, status=status.HTTP_404_NOT_FOUND)
     
 
@@ -150,6 +159,7 @@ def send_email_view(request):
     pass_recovery_object.created_at = datetime.now()
     pass_recovery_object.is_used = False
     pass_recovery_object.save()
+    SYSTEM_LOGGER.info(f"Password recovery email sent to: {data['email']}")
     return Response({'message': 'Email sent successfully!'}, status=status.HTTP_200_OK)
             
 
@@ -184,6 +194,7 @@ class PasswordRecoveryChangeView(generics.UpdateAPIView):
                 profile.save()
                 pass_recovery_object.is_used = True
                 pass_recovery_object.save()
+                SYSTEM_LOGGER.info(f"Password changed through recovery for email: {email}")
                 return Response({"message": "Password updated succesfully!"}, status=status.HTTP_200_OK)
 
 
@@ -202,5 +213,6 @@ class Logout_View(generics.UpdateAPIView):
         token.refresh_token = None
         token.save()
         USER_LOGGER.info(f"User '{request.user.username}' logged out, User Agent {request.META.get('HTTP_USER_AGENT')} from remote address {request.META.get('REMOTE_ADDR')}")
+        SYSTEM_LOGGER.info(f"User with ID {user_id} logged out successfully.")
         return Response({"message": "User logged out succesfully!"})
         

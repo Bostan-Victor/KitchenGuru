@@ -11,6 +11,9 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'user_activity.conf')
 logging.config.fileConfig(config_path, disable_existing_loggers=False)
 USER_LOGGER = logging.getLogger('user')
+config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'system_activity.conf')
+logging.config.fileConfig(config_path, disable_existing_loggers=False)
+SYSTEM_LOGGER = logging.getLogger('activity')
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -44,7 +47,7 @@ class RegisterSerializer(serializers.Serializer):
         rec_code = models.PasswordRecovery.objects.create(user=user)
         token_object = models.Tokens.objects.create(user=user)
         USER_LOGGER.info(f"User '{user.username}' successfully registered with email '{user.email}'")
-        
+        SYSTEM_LOGGER.info(f"New user registered with username: {validated_data['username']}")
         return user
     
 
