@@ -4,7 +4,7 @@ from users import models
 from authorization import serializers
 from rest_framework import generics, status
 from users import serializers
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from django.utils import timezone
 from users import models
@@ -26,23 +26,29 @@ SYSTEM_LOGGER = logging.getLogger('activity')
 
 class ProfileView(generics.RetrieveAPIView):
     serializer_class = serializers.UserProfileSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     
     def get_object(self):
-        user_id = self.request.user.id
-        try:
-            user = models.Users.objects.get(id=user_id)
-        except models.Users.DoesNotExist:
-            USER_LOGGER.error(f"User with user_id={user_id} tried to access profile but wasn't found.")
-            SYSTEM_LOGGER.warning(f'User with user_id={user_id} was not found!')
-            return Response({'message': f'User with user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
+        data = self.request.data
+        if data:
+            try:
+                user = models.Users.objects.get(username=data['username'])
+            except models.Users.DoesNotExist:
+                USER_LOGGER.error(f"User with username={data['username']} was not found.")
+                SYSTEM_LOGGER.warning(f'User with username={data["username"]} was not found!')
+                raise models.Users.DoesNotExist(f'User with username={data["username"]} was not found!')
+        else:
+            if not self.request.user.is_anonymous:
+                user = self.request.user
+            else:
+                raise PermissionError('Access token was not provided!')
         try:
             profile = models.Profiles.objects.get(user=user)
         except models.Profiles.DoesNotExist:
-            USER_LOGGER.error(f"User with user_id={user_id} tried to access profile but their profile wasn't found.")
-            SYSTEM_LOGGER.warning(f'Profile for user_id={user_id} was not found!')
-            return Response({'message': f'Profile for user_id={user_id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
-        user_created_recipes = recipes.models.Recipes.objects.filter(created_by_id=user_id)
+            USER_LOGGER.error(f"User with user_id={user.id} tried to access profile but their profile wasn't found.")
+            SYSTEM_LOGGER.warning(f'Profile for user_id={user.id} was not found!')
+            return Response({'message': f'Profile for user_id={user.id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
+        user_created_recipes = recipes.models.Recipes.objects.filter(created_by_id=user.id)
         user_data = {
             'username': user.username,
             'email': user.email,
@@ -51,7 +57,7 @@ class ProfileView(generics.RetrieveAPIView):
             },
             'recipes': user_created_recipes
         }
-        USER_LOGGER.info(f"User with user_id={user_id} accessed their profile.")
+        USER_LOGGER.info(f"User with user_id={user.id} accessed their profile.")
         return user_data
 
 
