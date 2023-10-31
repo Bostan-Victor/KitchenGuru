@@ -74,7 +74,7 @@ class AdminReviewSerializer(serializers.ModelSerializer):
 
     def validate_rating(self, value):
         if not 1 <= value <= 5:
-            SYSTEM_LOGGER.warning(f'Rating validation failed. Given rating: {value}')
+            SYSTEM_LOGGER.warning(f"Rating validation failed. Given rating: {value}.")
             raise serializers.ValidationError("Rating should be between 1 and 5.")
         return value
 
@@ -83,11 +83,11 @@ class AdminReviewSerializer(serializers.ModelSerializer):
         instance.text = validated_data.get('text', instance.text)
         instance.review_date = validated_data.get('review_added', datetime.now())
         instance.save()
-        SYSTEM_LOGGER.info(f'Review with ID: {instance.id} was updated by a superuser.')
+        SYSTEM_LOGGER.info(f"Review with ID: {instance.id} was updated by a superuser.")
         return instance
 
     def delete(self, instance):
-        SYSTEM_LOGGER.info(f'Review with ID: {instance.id} was deleted by a superuser.')
+        SYSTEM_LOGGER.info(f"Review with ID: {instance.id} was deleted by a superuser.")
         instance.delete()
 
     def to_representation(self, instance):
@@ -109,7 +109,7 @@ class UserReviewSerializer(serializers.ModelSerializer):
 
     def validate_rating(self, value):
         if not 1 <= value <= 5:
-            SYSTEM_LOGGER.warning(f'Rating validation failed. Given rating: {value}')
+            SYSTEM_LOGGER.warning(f"Rating validation failed. Given rating: {value}.")
             raise serializers.ValidationError("Rating should be between 1 and 5.")
         return value
 
@@ -118,11 +118,11 @@ class UserReviewSerializer(serializers.ModelSerializer):
         instance.text = validated_data.get('text', instance.text)
         instance.review_date = datetime.now()
         instance.save()
-        SYSTEM_LOGGER.info(f'Review with ID: {instance.id} was updated by user with id {self.request.user.id}.')
+        SYSTEM_LOGGER.info(f"Review with ID: {instance.id} was updated by user with ID {instance.user.id}.")
         return instance
 
     def delete(self, instance):
-        SYSTEM_LOGGER.info(f'Review with ID: {instance.id} was deleted by user with id {self.request.user.id}.')
+        SYSTEM_LOGGER.info(f"Review with ID: {instance.id} was deleted by user with ID {instance.user.id}.")
         instance.delete()
 
     def to_representation(self, instance):

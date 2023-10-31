@@ -35,7 +35,7 @@ class ProfileView(generics.RetrieveAPIView):
                 user = models.Users.objects.get(username=data['username'])
             except models.Users.DoesNotExist:
                 USER_LOGGER.error(f"User with username={data['username']} was not found.")
-                SYSTEM_LOGGER.warning(f'User with username={data["username"]} was not found!')
+                SYSTEM_LOGGER.warning(f"User with username={data['username']} was not found!, User agent: {self.request.META.get('HTTP_USER_AGENT')}, from remote address {self.request.META.get('REMOTE_ADDR')}")
                 raise models.Users.DoesNotExist(f'User with username={data["username"]} was not found!')
         else:
             if not self.request.user.is_anonymous:
@@ -46,7 +46,7 @@ class ProfileView(generics.RetrieveAPIView):
             profile = models.Profiles.objects.get(user=user)
         except models.Profiles.DoesNotExist:
             USER_LOGGER.error(f"User with user_id={user.id} tried to access profile but their profile wasn't found.")
-            SYSTEM_LOGGER.warning(f'Profile for user_id={user.id} was not found!')
+            SYSTEM_LOGGER.warning(f"Profile for user with ID {user.id} was not found, User agent: {self.request.META.get('HTTP_USER_AGENT')}, from remote address {self.request.META.get('REMOTE_ADDR')}.")
             return Response({'message': f'Profile for user_id={user.id} was not found!'}, status=status.HTTP_404_NOT_FOUND)
         user_created_recipes = recipes.models.Recipes.objects.filter(created_by_id=user.id)
         user_data = {
@@ -84,10 +84,10 @@ class AddWatchListView(generics.CreateAPIView):
             recipe.viewed_at = timezone.now()
             recipe.save()
             USER_LOGGER.info(f"User with user_id={user.id} viewed the recipe with id={recipe_id} again. View time updated.")
-            SYSTEM_LOGGER.info(f'The viewed at time of the recipe with id {recipe_id} was updated to the watchlist of user with id {user.id}')
+            SYSTEM_LOGGER.info(f"The viewed at time of the recipe with id {recipe_id} was updated to the watchlist of user with id {user.id}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}.")
             return Response({"message": "Recipe viewed at time updated!"}, status=status.HTTP_200_OK)
         USER_LOGGER.info(f"User with user_id={user.id} added the recipe with id={recipe_id} to their watch list.")
-        SYSTEM_LOGGER.info(f'Recipe with id {recipe_id} was added to the watchlist of user with id {user.id}')
+        SYSTEM_LOGGER.info(f"Recipe with id {recipe_id} was added to the watchlist of user with id {user.id}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
         return Response({'message': 'Recipe added to watch list!'}, status=status.HTTP_201_CREATED)
 
 

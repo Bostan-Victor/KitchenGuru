@@ -135,7 +135,7 @@ def password_recovery_request_view(request):
         USER_LOGGER.info(f"Password recovery requested for email '{data['email']}', User Agent {request.META.get('HTTP_USER_AGENT')} from remote address {request.META.get('REMOTE_ADDR')}")
         return Response({'code': random_code}, status=status.HTTP_200_OK)
     except models.Users.DoesNotExist:
-        SYSTEM_LOGGER.warning(f"Password recovery request for invalid email: {data['email']}")
+        SYSTEM_LOGGER.warning(f"Password recovery request for invalid email: {data['email']}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
         return Response({'message': 'This email is not valid!'}, status=status.HTTP_404_NOT_FOUND)
     
 

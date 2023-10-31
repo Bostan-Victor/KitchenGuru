@@ -70,7 +70,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
         instance.avatar = self.initial_data.get('avatar', instance.avatar)
         instance.user.save()
         instance.save()
-        SYSTEM_LOGGER.info(f'Profile was updated for user with user id {instance.user.id}.')
+        SYSTEM_LOGGER.info(f"Profile was updated for user with user id {instance.user.id}.")
         USER_LOGGER.info(f"User with user_id={instance.user.id} updated their profile.")
         return self.to_representation(instance)
     
