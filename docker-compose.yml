@@ -1,0 +1,82 @@
+version: "3.9"
+
+services:
+
+  front:
+    build:
+      context: /Users/doschinescud/Documents/GitHub/KitchenGuru/Frontend/kt-guru/
+    container_name: frontend
+    ports: 
+      - 80:80
+    restart: always
+    depends_on:
+      - kt-guru
+
+  kt-guru:
+    build:
+      context: /Users/doschinescud/Documents/GitHub/KitchenGuru/Backend/
+    container_name: backend
+    ports:
+      - 8000:8000
+
+  postgres:
+    image: postgres:14-alpine
+    container_name: psql-data
+    ports:
+      - 5432:5432
+    volumes:
+      - ktbackend-db:/var/lib/postgresql/data
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_DB=${DB_NAME}
+
+volumes:
+  ktbackend-db:
+
+
+  # sqlitebrowser:
+  #   image: lscr.io/linuxserver/sqlitebrowser:latest
+  #   container_name: sqlitebrowser
+  #   security_opt:
+  #     - seccomp:unconfined 
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Etc/UTC
+  #   volumes:
+  #     - /path/to/config:/config
+  #   ports:
+  #     - 3000:3000
+  #     - 3001:3001
+  #   restart: unless-stopped
+
+
+  # front:
+  #   # api:
+  #   build:
+  #     context: .
+  #     target: development
+  #   volumes:
+  #     - .:/code1/
+  #   ports:
+  #     - 5174:8000
+  #   command: npm run dev  
+
+  # service:
+  #   #api:
+  #   build:
+  #     context: . 
+  #     target: production
+    
+  #   ports: 
+  #     - 5174:8000
+    
+
+  # nginx:
+  #   build:
+  #     context: ./nginx/
+  #   ports:
+  #     - 8080:8080

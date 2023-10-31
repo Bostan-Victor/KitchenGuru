@@ -1,5 +1,4 @@
-[
-    {
+[{
         "model": "recipes.RecipesImages",
         "fields": {
             "image": "https://veganfamilyrecipes.com/wp-content/uploads/2018/02/Creamy-Almond-Soup-Recipe-Vegan-4-of-7.jpg",
