@@ -25,4 +25,16 @@ python3 manage.py collectstatic --no-imput
 
 sleep .5 
 
+python3 manage.py loaddata recipes.json
+
+sleep .5
+
+python3 manage.py loaddata recipe_images.json
+
+sleep .5 
+
+python3 manage.py loaddata ingredients.json
+
+sleep .5
+
 gunicorn KitchenGuru.wsgi:application -b 0.0.0.0:8000
