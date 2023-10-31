@@ -145,7 +145,8 @@ class Logout_View(generics.UpdateAPIView):
         try: 
             token = models.Tokens.objects.get(user_id=user_id)
         except models.Tokens.DoesNotExist:  
-            return Response({"message": f"For user {request.user} could not find any tokens"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"message": f"For user {request.user} could not find any tokens"},
+                            status=status.HTTP_401_UNAUTHORIZED)
 
         token.access_token = None
         token.refresh_token = None
