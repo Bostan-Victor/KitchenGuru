@@ -1,6 +1,6 @@
 from rest_framework import generics, status, views, permissions, exceptions
 from recipes import serializers
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from recipes import models
 from rest_framework.response import Response
 from datetime import datetime, timedelta
@@ -65,7 +65,7 @@ class DeleteRecipeView(generics.DestroyAPIView):
 class CreateReviewView(generics.ListCreateAPIView):
     queryset = models.Review.objects.all()
     serializer_class = serializers.ReviewDetailSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         recipe_id = self.request.query_params.get('recipe_id', None)
@@ -93,7 +93,7 @@ class CreateReviewView(generics.ListCreateAPIView):
                 user=user, 
                 rating=data["rating"], 
                 text=data["text"], 
-                review_added=datetime.now())
+                review_date=datetime.now())
             serializer = self.get_serializer(review, many=False)
             USER_LOGGER.info(f'User {request.user} successfully created a review for recipe: {request.data.get("id")}')
             SYSTEM_LOGGER.info(f"Review created successfully for recipe {data['id']} by user {request.user.id}")

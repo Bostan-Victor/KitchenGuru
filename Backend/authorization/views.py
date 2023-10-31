@@ -53,7 +53,7 @@ def login_view(request):
         profile.last_login = datetime.now()
         profile.save()
     except models.Profiles.DoesNotExist:
-        SYSTEM_LOGGER.warning(f"User with username or email: {data['username_email']} has no profile created, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
+        SYSTEM_LOGGER.warning(f"No profile created for user with username or email: {data['username_email']}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
         return Response({"message": "Profile does not exist!"}, status=status.HTTP_404_NOT_FOUND)
     # token, created = models.Tokens.objects.get_or_create()
     if check_password(data['password'], user.password):
@@ -87,7 +87,7 @@ class RefreshTokenView(generics.UpdateAPIView):
             user_tokens = models.Tokens.objects.get(user_id=user_id)
             USER_LOGGER.info(f"User '{request.user.username}', User Agent {request.META.get('HTTP_USER_AGENT')} refreshed token from remote address {request.META.get('REMOTE_ADDR')}")
         except:
-            SYSTEM_LOGGER.error(f"Failed to get tokens for user ID: {user_id}")
+            SYSTEM_LOGGER.error(f"Failed to get tokens for user ID: {user_id}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
             return Response({'message': 'The provided access token is invalid!'}, status=status.HTTP_401_UNAUTHORIZED)
         refresh_token = RefreshToken(user_tokens.refresh_token)
         new_access_token = str(refresh_token.access_token)
@@ -116,10 +116,10 @@ class ChangePasswordView(generics.UpdateAPIView):
             profile = models.Profiles.objects.get(user_id=user.id)
             profile.updated = datetime.now()
             profile.save()
-            SYSTEM_LOGGER.info(f"User {user.id} changed password successfully.")
+            SYSTEM_LOGGER.info(f"Password successfully saved for user with user ID: {user.id}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
             return Response({"message": "Password updated succesfully!"}, status=status.HTTP_200_OK)
         else:
-            SYSTEM_LOGGER.warning(f"User {user.id} failed to change password due to incorrect old password.")
+            SYSTEM_LOGGER.warning(f"Password change denied for user with user ID {user.id} due to incorrect old password. User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
             return Response({"message": "Old password is incorrect!"}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -153,13 +153,13 @@ def send_email_view(request):
         fail_silently=False
     )
     USER_LOGGER.info(f"Password recovery email sent to '{data['email']}', User Agent {request.META.get('HTTP_USER_AGENT')} from remote address {request.META.get('REMOTE_ADDR')}")
-
+    SYSTEM_LOGGER.info(f"Password recovery email has been sent to {data['email']}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
     user = models.Users.objects.get(email=data['email'])
     pass_recovery_object = models.PasswordRecovery.objects.get(user_id=user.id)
     pass_recovery_object.created_at = datetime.now()
     pass_recovery_object.is_used = False
     pass_recovery_object.save()
-    SYSTEM_LOGGER.info(f"Password recovery email sent to: {data['email']}")
+    SYSTEM_LOGGER.info(f"Email time saved for email {data['email']}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
     return Response({'message': 'Email sent successfully!'}, status=status.HTTP_200_OK)
             
 
@@ -194,7 +194,7 @@ class PasswordRecoveryChangeView(generics.UpdateAPIView):
                 profile.save()
                 pass_recovery_object.is_used = True
                 pass_recovery_object.save()
-                SYSTEM_LOGGER.info(f"Password changed through recovery for email: {email}")
+                SYSTEM_LOGGER.info(f"Password changed through recovery for email: {email}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
                 return Response({"message": "Password updated succesfully!"}, status=status.HTTP_200_OK)
 
 
@@ -206,13 +206,13 @@ class Logout_View(generics.UpdateAPIView):
 
         try: 
             token = models.Tokens.objects.get(user_id=user_id)
-        except models.Tokens.DoesNotExist:  
+        except models.Tokens.DoesNotExist:
+            SYSTEM_LOGGER.warning(f"No tokens found for user with user ID: {user_id}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
             return Response({"message": f"For user {request.user} could not find any tokens"}, status=status.HTTP_401_UNAUTHORIZED)
 
         token.access_token = None
         token.refresh_token = None
         token.save()
         USER_LOGGER.info(f"User '{request.user.username}' logged out, User Agent {request.META.get('HTTP_USER_AGENT')} from remote address {request.META.get('REMOTE_ADDR')}")
-        SYSTEM_LOGGER.info(f"User with ID {user_id} logged out successfully.")
+        SYSTEM_LOGGER.info(f"Logging out successful for user with ID {user_id}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
         return Response({"message": "User logged out succesfully!"})
-        
