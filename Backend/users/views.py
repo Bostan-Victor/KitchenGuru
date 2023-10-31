@@ -29,14 +29,14 @@ class ProfileView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
     
     def get_object(self):
-        data = self.request.data
-        if data:
+        data = self.request.query_params.get('username', '')
+        if data != '':
             try:
-                user = models.Users.objects.get(username=data['username'])
+                user = models.Users.objects.get(username=data)
             except models.Users.DoesNotExist:
-                USER_LOGGER.error(f"User with username={data['username']} was not found.")
-                SYSTEM_LOGGER.warning(f'User with username={data["username"]} was not found!')
-                raise models.Users.DoesNotExist(f'User with username={data["username"]} was not found!')
+                USER_LOGGER.error(f"User with username={data} was not found.")
+                SYSTEM_LOGGER.warning(f'User with username={data} was not found!')
+                raise models.Users.DoesNotExist(f'User with username={data} was not found!')
         else:
             if not self.request.user.is_anonymous:
                 user = self.request.user
