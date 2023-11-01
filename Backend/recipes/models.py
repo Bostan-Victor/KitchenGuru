@@ -1,3 +1,4 @@
+from unittest.util import _MAX_LENGTH
 from django.db import models
 from users.models import Users
 
@@ -34,7 +35,7 @@ class Ingredients(models.Model):
 
 class RecipesImages(models.Model):
     recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to="recipes/", default="static/recipes/no_recipe.jpg")
+    image = models.ImageField(upload_to="recipes/", default="static/recipes/no_recipe.jpg", max_length=500)
 
 
 class Favorites(models.Model):

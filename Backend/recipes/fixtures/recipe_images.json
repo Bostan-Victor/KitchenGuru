@@ -22,7 +22,7 @@
     {
         "model": "recipes.RecipesImages",
         "fields": {
-            "image": "https://static01.nyt.com/images/2017/12/05/dining/20COOKING-SPLITPEASOUP2/20COOKING-SPLITPEASOUP2-articleLarge.jpg",
+            "image": "https://shorturl.at/lqvS3",
             "recipe_id": 4
         }
     },
