@@ -9,10 +9,14 @@ from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 from KitchenGuru import settings
 import openai
-from django.http import Http404
 import os
 import logging
 import logging.config
+import requests
+from django.core.files import File
+from django.core.files.temp import NamedTemporaryFile
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 
 
 openai.api_key = settings.CHATGPT_API_KEY
@@ -126,6 +130,33 @@ class UpdateReviewView(generics.RetrieveUpdateDestroyAPIView):
                 SYSTEM_LOGGER.warning(f"Attempt to access a non-existing review for recipe with ID {recipes_id} by user with ID{self.request.user.id}, User agent: {self.request.META.get('HTTP_USER_AGENT')}, from remote address {self.request.META.get('REMOTE_ADDR')}")
                 raise exceptions.ValidationError({"message": "No reviews found for the authenticated user and provided recipes_id."})
             return reviews
+    
+    def delete(self, *args, **kwargs):
+        recipes_id = self.kwargs.get('recipes_id')
+        if self.request.user.is_superuser:
+            user_id = self.request.data.get("user_id")
+            if not user_id:
+                USER_LOGGER.warning(f"Superuser {self.request.user.username} tried to delete a review without providing a 'user_id'.")
+                return Response({"message": "The field 'user_id' is required for superusers."}, status=status.HTTP_400_BAD_REQUEST)
+
+            reviews = self.queryset.filter(user_id=user_id, recipes_id=recipes_id)
+            if not reviews.exists():
+                USER_LOGGER.info(f"Superuser {self.request.user.username} tried to delete a non-existent review for user_id: {user_id} and recipes_id: {recipes_id}.")
+                return Response({"message": "No reviews found for provided user_id and recipes_id."}, status=status.HTTP_404_NOT_FOUND)
+            
+            SYSTEM_LOGGER.warning(f"Review by user with ID {user_id} for recipe with ID {recipes_id} was deleted by a superuser, User agent: {self.request.META.get('HTTP_USER_AGENT')}, from remote address {self.request.META.get('REMOTE_ADDR')}")
+            reviews.delete()
+            return Response({"message": f"Review with id {recipes_id} has been deleted successfully!"}, status=status.HTTP_200_OK)
+
+        else:
+            reviews = self.queryset.filter(user_id=self.request.user.id, recipes_id=recipes_id)
+            if not reviews.exists():
+                USER_LOGGER.info(f"User {self.request.user.username} tried to fetch a non-existent review for recipes_id: {recipes_id}.")
+                return Response({"message": "No reviews found for the authenticated user and provided recipes_id."}, status=status.HTTP_404_NOT_FOUND)
+            
+            SYSTEM_LOGGER.info(f"Review by user with ID {self.request.user.id} for recipe with ID {recipes_id} was deleted by user with ID {self.request.user.id}, User agent: {self.request.META.get('HTTP_USER_AGENT')}, from remote address {self.request.META.get('REMOTE_ADDR')}")
+            reviews.delete()
+            return Response({"message": f"Review with id {recipes_id} has been deleted successfully!"}, status=status.HTTP_200_OK)
 
     def get_serializer_class(self):
         if self.request.user.is_superuser:
@@ -361,7 +392,7 @@ def send_code_to_api(categories, ingredients):
         SYSTEM_LOGGER.warning("Unexpected response format from OpenAI")
         return {"message": "Unexpected response format from OpenAI."}, status.HTTP_500_INTERNAL_SERVER_ERROR
     except openai.error.ServiceUnavailableError:
-        SYSTEM_LOGGER.error("Issue with the OpenAI API servers")
+        SYSTEM_LOGGER.warning("Issue with the OpenAI API servers")
         return {"message": "Issue with the OpenAI API servers."}, status.HTTP_503_SERVICE_UNAVAILABLE
 
 
@@ -371,7 +402,8 @@ def create_ai_recipe_image(recipe_title):
         n=1,
         size="512x512"
     )
-    return response['data'][0]['url']
+    image_url = response['data'][0]['url']
+    return image_url
 
 
 class AIRecipesView(views.APIView):

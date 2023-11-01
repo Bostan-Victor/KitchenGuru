@@ -23,7 +23,7 @@ class Recipes(models.Model):
 
 class AIRecipes(models.Model):
     message = models.TextField()
-    image_url = models.ImageField()
+    image_field = models.ImageField()
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(Users, on_delete=models.CASCADE)
 

@@ -86,10 +86,6 @@ class AdminReviewSerializer(serializers.ModelSerializer):
         SYSTEM_LOGGER.info(f"Review with ID: {instance.id} was updated by a superuser.")
         return instance
 
-    def delete(self, instance):
-        SYSTEM_LOGGER.info(f"Review with ID: {instance.id} was deleted by a superuser.")
-        instance.delete()
-
     def to_representation(self, instance):
         data = {}
         data['review_id'] = instance.id
@@ -114,16 +110,13 @@ class UserReviewSerializer(serializers.ModelSerializer):
         return value
 
     def update(self, instance, validated_data):
+        print('123')
         instance.rating = validated_data.get('rating', instance.rating)
         instance.text = validated_data.get('text', instance.text)
         instance.review_date = datetime.now()
         instance.save()
         SYSTEM_LOGGER.info(f"Review with ID: {instance.id} was updated by user with ID {instance.user.id}.")
         return instance
-
-    def delete(self, instance):
-        SYSTEM_LOGGER.info(f"Review with ID: {instance.id} was deleted by user with ID {instance.user.id}.")
-        instance.delete()
 
     def to_representation(self, instance):
         data = {}
