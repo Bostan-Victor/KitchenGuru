@@ -1,10 +1,9 @@
 from rest_framework import serializers
 from recipes import models
-from datetime import datetime
 import logging
 import logging.config
 import os
-
+from django.utils import timezone
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(current_dir, '..', 'KitchenGuru', 'system_activity.conf')
@@ -44,7 +43,7 @@ class CreateRecipeSerializer(serializers.Serializer):
 
 class AIRecipeSerializer(serializers.Serializer):
     message = serializers.CharField(max_length=255)
-    image_url = serializers.CharField(max_length=255)
+    image = serializers.ImageField()
 
 
 class UserSerializer(serializers.Serializer):
@@ -63,6 +62,9 @@ class ReviewDetailSerializer(serializers.Serializer):
         data['rating'] = instance.rating
         data['username'] = instance.user.username
         data['avatar'] = instance.user.profiles.avatar.url
+        data['review_date'] = instance.review_date
+        time_diff = timezone.now() - instance.review_date
+        data['minutes_passed'] = round(time_diff.total_seconds() / 60)
         return data
 
 
@@ -81,7 +83,7 @@ class AdminReviewSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.rating = validated_data.get('rating', instance.rating)
         instance.text = validated_data.get('text', instance.text)
-        instance.review_date = validated_data.get('review_added', datetime.now())
+        instance.review_date = validated_data.get('review_added', timezone.now())
         instance.save()
         SYSTEM_LOGGER.info(f"Review with ID: {instance.id} was updated by a superuser.")
         return instance
@@ -95,13 +97,16 @@ class AdminReviewSerializer(serializers.ModelSerializer):
         data['user_id'] = instance.user.id
         data['username'] = instance.user.username
         data['avatar'] = instance.user.profiles.avatar.url
+        data['review_date'] = instance.review_date
+        time_diff = timezone.now() - instance.review_date
+        data['minutes_passed'] = round(time_diff.total_seconds() / 60)
         return data
 
 
 class UserReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Review
-        fields = ['rating', 'text']
+        fields = ['rating', 'text', 'review_date']
 
     def validate_rating(self, value):
         if not 1 <= value <= 5:
@@ -113,7 +118,7 @@ class UserReviewSerializer(serializers.ModelSerializer):
         print('123')
         instance.rating = validated_data.get('rating', instance.rating)
         instance.text = validated_data.get('text', instance.text)
-        instance.review_date = datetime.now()
+        instance.review_date = timezone.now()
         instance.save()
         SYSTEM_LOGGER.info(f"Review with ID: {instance.id} was updated by user with ID {instance.user.id}.")
         return instance
@@ -124,6 +129,9 @@ class UserReviewSerializer(serializers.ModelSerializer):
         data['rating'] = instance.rating
         data['username'] = instance.user.username
         data['avatar'] = instance.user.profiles.avatar.url
+        data['review_date'] = instance.review_date
+        time_diff = timezone.now() - instance.review_date
+        data['minutes_passed'] = round(time_diff.total_seconds() / 60)
         return data
 
 

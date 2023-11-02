@@ -17,6 +17,7 @@ from django.core.files import File
 from django.core.files.temp import NamedTemporaryFile
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.utils import timezone
 
 
 openai.api_key = settings.CHATGPT_API_KEY
@@ -97,7 +98,7 @@ class CreateReviewView(generics.ListCreateAPIView):
                 user=user, 
                 rating=data["rating"], 
                 text=data["text"], 
-                review_date=datetime.now())
+                review_date=timezone.now())
             serializer = self.get_serializer(review, many=False)
             USER_LOGGER.info(f'User {request.user} successfully created a review for recipe: {request.data.get("id")}')
             SYSTEM_LOGGER.info(f"Review created successfully for recipe {data['id']} by user {request.user.id}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")
@@ -379,7 +380,7 @@ def send_code_to_api(categories, ingredients):
         if response_message[:7] == "Title: ":
             recipe_title = response_message.split("\n")[0][7:]
             recipe_image_url = create_ai_recipe_image(recipe_title)
-            return {"message": response_message, "image_url": recipe_image_url}, status.HTTP_200_OK
+            return {"message": response_message, "image": recipe_image_url}, status.HTTP_200_OK
         else:
             return {"message": "Unexpected response format from OpenAI."}, status.HTTP_500_INTERNAL_SERVER_ERROR
     except openai.error.AuthenticationError:
@@ -403,7 +404,20 @@ def create_ai_recipe_image(recipe_title):
         size="512x512"
     )
     image_url = response['data'][0]['url']
-    return image_url
+    image_response = requests.get(image_url)
+    if image_response.status_code == 200:
+        image_directory = os.path.join(settings.MEDIA_ROOT, 'ai_recipes')
+
+        image_name = f"{recipe_title.replace(' ', '_')}.png"
+        image_path = os.path.join(image_directory, image_name)
+
+        with open(image_path, 'wb') as image_file:
+            image_file.write(image_response.content)
+        
+        return "/" + os.path.join('ai_recipes', image_name).replace('\\', '/')
+    else:
+        raise Exception("Failed to download the image.")
+
 
 
 class AIRecipesView(views.APIView):
@@ -432,14 +446,17 @@ class CreateAIRecipesView(generics.ListCreateAPIView):
             return Response({"message": "This user has not created any AI generated recipes"}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(queryset, many=True)
         USER_LOGGER.info(f"User {request.user.username} listed their AI generated recipes.")
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
     
     def create(self, request):
         data = request.data
         recipe = self.queryset.create(
             created_by = request.user,
             message = data['message'],
-            image_url = data['image_url']    
+            image = data['image']    
         )
         serializer = self.serializer_class(recipe)
         USER_LOGGER.info(f"User {request.user.username} created a new AI generated recipe with id: {recipe.id}.")

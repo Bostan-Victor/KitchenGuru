@@ -23,7 +23,7 @@ class Recipes(models.Model):
 
 class AIRecipes(models.Model):
     message = models.TextField()
-    image_field = models.ImageField()
+    image = models.ImageField(upload_to="ai_recipes/", default="static/recipes/no_recipe.jpg")
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(Users, on_delete=models.CASCADE)
 
