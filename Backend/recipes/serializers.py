@@ -115,7 +115,6 @@ class UserReviewSerializer(serializers.ModelSerializer):
         return value
 
     def update(self, instance, validated_data):
-        print('123')
         instance.rating = validated_data.get('rating', instance.rating)
         instance.text = validated_data.get('text', instance.text)
         instance.review_date = timezone.now()

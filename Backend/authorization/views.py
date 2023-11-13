@@ -50,7 +50,7 @@ def login_view(request):
             return Response({"message": "Username or Email invalid!"}, status=status.HTTP_404_NOT_FOUND)
     try:
         profile = models.Profiles.objects.get(user_id=user.id)
-        profile.last_login = datetime.now()
+        profile.last_login = timezone.now()
         profile.save()
     except models.Profiles.DoesNotExist:
         SYSTEM_LOGGER.warning(f"No profile created for user with username or email: {data['username_email']}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}")

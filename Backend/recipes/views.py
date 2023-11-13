@@ -419,7 +419,6 @@ def create_ai_recipe_image(recipe_title):
         raise Exception("Failed to download the image.")
 
 
-
 class AIRecipesView(views.APIView):
     def post(self, request):
         user_categories = request.data.get('categories', [])
