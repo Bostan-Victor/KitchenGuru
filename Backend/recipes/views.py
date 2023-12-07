@@ -461,3 +461,60 @@ class CreateAIRecipesView(generics.ListCreateAPIView):
         USER_LOGGER.info(f"User {request.user.username} created a new AI generated recipe with id: {recipe.id}.")
         SYSTEM_LOGGER.info(f"AI recipe created by user with ID {self.request.user.id}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}.")
         return Response(serializer.data, status=status.HTTP_201_CREATED)  
+    
+
+class GetAIRecipesView(views.APIView):
+    queryset = models.AIRecipes.objects.all()
+    serializer_class = serializers.AIRecipeSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_id = self.request.user.id
+        recipe_id = self.request.query_params.get("recipe_id")
+
+        try:
+            queryset = models.AIRecipes.objects.get(created_by=user_id, id=recipe_id)
+            serializer = self.serializer_class(queryset, many=False)
+            return Response(serializer.data, status = status.HTTP_200_OK)
+        except models.AIRecipes.DoesNotExist:
+            return Response({'message': 'The user has no recipe with the ID provided'}, status=status.HTTP_404_NOT_FOUND)    
+
+
+class DeleteAIRecipesView(generics.DestroyAPIView):
+    queryset = models.AIRecipes.objects.all()
+    serializer_class = serializers.AIRecipeSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request):
+        user_id = request.user.id
+        recipe_id = request.query_params.get("recipe_id")
+
+        try:
+            models.AIRecipes.objects.get(created_by=user_id, id=recipe_id).delete()
+            return Response({'message': 'AI recipe deleted'}, status=status.HTTP_200_OK)
+        except models.AIRecipes.DoesNotExist:
+            return Response({'message': 'The user has no recipe with the ID provided'}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+
+
+# class DeleteFavoritesView(generics.DestroyAPIView):
+#     serializer_class = serializers.RecipeIdSerialier
+#     permission_classes = [IsAuthenticated]
+
+
+#     def delete(self, request):
+#         user = request.user
+#         recipe_id = request.data['recipe_id']
+
+#         try:
+#             models.Favorites.objects.get(user_id=user.id, recipe_id=recipe_id).delete()
+#             USER_LOGGER.info(f"User {user.username} deleted recipe with id: {recipe_id} from favorites.")
+#             SYSTEM_LOGGER.info(f"Recipe with ID {recipe_id} has been deleted from the list of favorites of user {user.id}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}.")
+#             return Response({'message': 'Recipe deleted from favorites!'}, status=status.HTTP_200_OK)
+#         except models.Favorites.DoesNotExist:
+#             USER_LOGGER.info(f"User {user.username} failed to delete recipe with id: {recipe_id} from favorites, due to it not being there originally.")
+#             SYSTEM_LOGGER.warning(f"Attempt to delete a non-favorited recipe with ID {recipe_id} from favorites by user with ID {user.id}, User agent: {request.META.get('HTTP_USER_AGENT')}, from remote address {request.META.get('REMOTE_ADDR')}.")
+#             return Response({'message': 'The recipe is not in this users favorites!'}, status=status.HTTP_404_NOT_FOUND)

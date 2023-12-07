@@ -42,6 +42,7 @@ class CreateRecipeSerializer(serializers.Serializer):
     
 
 class AIRecipeSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
     message = serializers.CharField(max_length=255)
     image = serializers.ImageField()
 

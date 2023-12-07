@@ -18,5 +18,7 @@ urlpatterns = [
     path('search', views.SearchRecipesView.as_view()),
     path('generate-ai-recipes', views.AIRecipesView.as_view()),
     path('create-ai-recipes', views.CreateAIRecipesView.as_view()),
-    path('update-review/<int:recipes_id>/', views.UpdateReviewView.as_view())
+    path('update-review/<int:recipes_id>/', views.UpdateReviewView.as_view()),
+    path('get-ai-recipes', views.GetAIRecipesView.as_view()),
+    path('delete-ai-recipes', views.DeleteAIRecipesView.as_view())
 ] 
