@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-_d!rhe@yh%3=il3qs_ffa05zu9(vn%yn=1=gdoyw+^bdf_(1r^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['kitchenguru.onrender.com']
 
 
 # Application definition
